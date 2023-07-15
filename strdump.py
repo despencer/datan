@@ -1,12 +1,14 @@
 #!/usr/bin/python3
 import argparse
 import yaml
+import records
 
 def dump(args):
     print('Filename:', args.filename)
     print('Structures:', args.structures)
     with open(args.structures) as strfile:
-        print(yaml.load(strfile, Loader=yaml.Loader))
+        strdef = records.loadmeta(yaml.load(strfile, Loader=yaml.Loader))
+        print(strdef)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='File data dump')

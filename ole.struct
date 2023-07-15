@@ -1,3 +1,8 @@
 namespace: ole
+version: 1
 records:
-    - name: header
+    header:
+        - signature:
+            type: "char[8]"
+        - clsid:
+            type: "free[16]"
