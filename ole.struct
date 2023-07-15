@@ -2,7 +2,11 @@ namespace: ole
 version: 1
 records:
     header:
-        - signature:
-            type: "char[8]"
-        - clsid:
-            type: "free[16]"
+        - field: signature
+          type: uint64
+        - field: clsid
+          type: "free[16]"
+        - field: minorversion
+          type: uint16
+        - field: majorversion
+          type: uint16
