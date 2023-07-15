@@ -7,9 +7,25 @@ class FieldMeta:
     def __repr__(self):
         return self.name
 
+class PlainRecord:
+    def __init__(self, meta):
+        self._meta = meta
+
+    def __repr__(self):
+        return self._meta.prettyprint(self)
+
 class PlainRecordMeta:
     def __init__(self):
         self.fields = []
+
+    def extract(self, datafile):
+        data = PlainRecord(self)
+        for f in self.fields:
+            setattr(data, f.name, f.extractor(datafile))
+        return data
+
+    def prettyprint(self, data):
+        return "\n".join( map( lambda x: "{0}: {1}".format(x.name, getattr(data, x.name)), self.fields) )
 
     @classmethod
     def loadmeta(cls, name, yrec):
@@ -57,6 +73,10 @@ class PlainRecordMeta:
 class Structure:
     def __init__(self):
         self.records = {}
+        self.start = None
+
+    def extract(self, datafile):
+        return self.start.extract(datafile)
 
     def __repr__(self):
         return '\n'.join( map(str, self.records.values()) )
@@ -65,4 +85,6 @@ def loadmeta(ymeta):
     strmeta = Structure()
     for yrname, yrec in ymeta['records'].items():
         strmeta.records[yrname] = PlainRecordMeta.loadmeta(yrname, yrec)
+        if strmeta.start == None:
+            strmeta.start = strmeta.records[yrname]
     return strmeta
