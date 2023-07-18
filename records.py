@@ -14,7 +14,7 @@ class PlainRecord:
     def __repr__(self):
         return self._meta.prettyprint(self)
 
-class PlainRecordMeta:
+class PlainRecordReader:
     def __init__(self):
         self.fields = []
 
@@ -29,7 +29,7 @@ class PlainRecordMeta:
 
     @classmethod
     def loadmeta(cls, name, yrec, formatter):
-        prec = PlainRecordMeta()
+        prec = PlainRecordReader()
         prec.name = name
         for yfield in yrec:
             field = FieldMeta()
@@ -85,7 +85,7 @@ class Structure:
 def loadmeta(ymeta, formatter):
     strmeta = Structure()
     for yrname, yrec in ymeta['records'].items():
-        strmeta.records[yrname] = PlainRecordMeta.loadmeta(yrname, yrec, formatter)
+        strmeta.records[yrname] = PlainRecordReader.loadmeta(yrname, yrec, formatter)
         if strmeta.start == None:
             strmeta.start = strmeta.records[yrname]
     return strmeta
