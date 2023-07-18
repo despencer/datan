@@ -10,3 +10,35 @@ records:
           type: uint16
         - field: majorversion
           type: uint16
+        - field: byteorder
+          type: uint16
+        - field: sectorshift
+          type: uint16
+        - field: minisectorshift
+          type: uint16
+        - field: reserved1
+          type: "free[6]"
+        - field: numdirsect
+          type: uint32
+        - field: numfatsect
+          type: uint32
+        - field: firstdirsect
+          type: uint32
+        - field: trxsign
+          type: uint32
+        - field: ministreamcutoff
+          type: uint32
+        - field: firstminifatsect
+          type: uint32
+        - field: numminifatsect
+          type: uint32
+        - field: firstdifatsect
+          type: uint32
+        - field: numdifatsect
+          type: uint32
+
+
+
+
+
+
