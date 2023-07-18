@@ -25,16 +25,17 @@ class PlainRecordMeta:
         return data
 
     def prettyprint(self, data):
-        return "\n".join( map( lambda x: "{0}: {1}".format(x.name, getattr(data, x.name)), self.fields) )
+        return self.name + ":\n"+"\n".join( map( lambda x: "    {0}: {1}".format(x.name, x.formatter(getattr(data, x.name))), self.fields) )
 
     @classmethod
-    def loadmeta(cls, name, yrec):
+    def loadmeta(cls, name, yrec, formatter):
         prec = PlainRecordMeta()
         prec.name = name
         for yfield in yrec:
             field = FieldMeta()
             field.name = yfield['field']
             field.extractor = cls.getextractor(yfield['type'])
+            field.formatter = formatter.get(yfield['type'])
             prec.fields.append(field)
         return prec
 
@@ -81,10 +82,10 @@ class Structure:
     def __repr__(self):
         return '\n'.join( map(str, self.records.values()) )
 
-def loadmeta(ymeta):
+def loadmeta(ymeta, formatter):
     strmeta = Structure()
     for yrname, yrec in ymeta['records'].items():
-        strmeta.records[yrname] = PlainRecordMeta.loadmeta(yrname, yrec)
+        strmeta.records[yrname] = PlainRecordMeta.loadmeta(yrname, yrec, formatter)
         if strmeta.start == None:
             strmeta.start = strmeta.records[yrname]
     return strmeta
