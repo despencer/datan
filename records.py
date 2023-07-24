@@ -1,4 +1,5 @@
 import os
+import importlib
 
 class FieldMeta:
     def __init__(self):
@@ -75,6 +76,7 @@ class Structure:
     def __init__(self):
         self.records = {}
         self.start = None
+        self.module = None
 
     def extract(self, datafile):
         return self.start.extract(datafile)
@@ -82,10 +84,22 @@ class Structure:
     def __repr__(self):
         return '\n'.join( map(str, self.records.values()) )
 
-def loadmeta(ymeta, formatter):
+def loadpyfile(filename):
+    pyfile = os.path.splitext(filename)[0] + '.py'
+    pymodule = os.path.splitext(filename)[0].replace('/','.')
+    if os.path.exists(pyfile):
+        print(pyfile, 'loaded')
+        return importlib.import_module(pymodule)
+    else:
+        print(pyfile, 'is not exist, skipped')
+        return None
+
+def loadmeta(ymeta, formatter, filename):
     strmeta = Structure()
+    strmeta.module = loadpyfile(filename)
+    namespace = ymeta['namespace']+'.' if 'namespace' in ymeta else ''
     for yrname, yrec in ymeta['records'].items():
-        strmeta.records[yrname] = PlainRecordReader.loadmeta(yrname, yrec, formatter)
+        strmeta.records[yrname] = PlainRecordReader.loadmeta(namespace + yrname, yrec, formatter)
         if strmeta.start == None:
             strmeta.start = strmeta.records[yrname]
     return strmeta

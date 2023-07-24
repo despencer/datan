@@ -8,7 +8,7 @@ def dump(args):
     print('Filename:', args.filename)
     print('Structures:', args.structures)
     with open(args.structures) as strfile:
-        strdef = records.loadmeta(yaml.load(strfile, Loader=yaml.Loader), formatter.getdefault())
+        strdef = records.loadmeta(yaml.load(strfile, Loader=yaml.Loader), formatter.getdefault(), args.structures)
         with open(args.filename, 'rb') as datafile:
             print(strdef.extract(datafile))
 
