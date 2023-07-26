@@ -1,6 +1,9 @@
 namespace: ole
 version: 1
 types:
+    file:
+        - field: header
+          type: header
     header:
         - field: signature
           type: uint64

@@ -1,7 +1,8 @@
+import yaml
 import os
 import importlib
 
-class FieldMeta:
+class FieldReader:
     def __init__(self):
         pass
 
@@ -19,43 +20,26 @@ class PlainRecordReader:
     def __init__(self):
         self.fields = []
 
-    def extract(self, datafile):
+    def read(self, datafile):
         data = PlainRecord(self)
         for f in self.fields:
-            setattr(data, f.name, f.extractor(datafile))
+            setattr(data, f.name, f.reader(datafile))
         return data
 
     def prettyprint(self, data):
         return self.name + ":\n"+"\n".join( map( lambda x: "    {0}: {1}".format(x.name, x.formatter(getattr(data, x.name))), self.fields) )
 
     @classmethod
-    def loadmeta(cls, name, yrec, formatter):
+    def loadreader(cls, name, yrec, loader):
         prec = PlainRecordReader()
-        prec.name = name
+        prec.name = loader.structure.namespace + name
         for yfield in yrec:
-            field = FieldMeta()
+            field = FieldReader()
             field.name = yfield['field']
-            field.extractor = cls.getextractor(yfield['type'])
-            field.formatter = formatter.get(yfield['type'])
+            field.reader = loader.getreader(yfield['type'], field)
+            field.formatter = loader.formatter.get(yfield['type'])
             prec.fields.append(field)
         return prec
-
-    @classmethod
-    def getextractor(cls, stype):
-        if stype.find('[') >=0 :
-            return cls.getarrayextractor(stype)
-        return { 'uint8': lambda x: int.from_bytes(x.read(1)),
-            'uint16': lambda x: int.from_bytes(x.read(2), 'little'),
-            'uint32': lambda x: int.from_bytes(x.read(4), 'little'),
-            'uint64': lambda x: int.from_bytes(x.read(8), 'little') }[stype]
-
-    @classmethod
-    def getarrayextractor(cls, stype):
-        simple = stype[:stype.find('[')]
-        count = int( stype[stype.find('[')+1:stype.find(']')] )
-        if simple == 'free':
-            return lambda x: cls.skipfree(x, count)
-        return lambda x: cls.extractarray(x, cls.getextractor(simple), count)
 
     @classmethod
     def skipfree(cls, stream, count):
@@ -63,7 +47,7 @@ class PlainRecordReader:
         return None
 
     @classmethod
-    def extractarray(cls, stream, simple, count):
+    def readarray(cls, stream, simple, count):
         ret = []
         for i in range(count):
             ret.append( simple(stream) )
@@ -78,28 +62,70 @@ class Structure:
         self.start = None
         self.module = None
 
-    def extract(self, datafile):
-        return self.start.extract(datafile)
+    def read(self, datafile):
+        return self.start.read(datafile)
 
     def __repr__(self):
         return '\n'.join( map(str, self.records.values()) )
 
-def loadpyfile(filename):
-    pyfile = os.path.splitext(filename)[0] + '.py'
-    pymodule = os.path.splitext(filename)[0].replace('/','.')
-    if os.path.exists(pyfile):
-        print(pyfile, 'loaded')
-        return importlib.import_module(pymodule)
-    else:
-        print(pyfile, 'is not exist, skipped')
+class LoaderXRef:
+    def __init__(self, field, typename)
+        self.field = field
+        self.typename = typename
+
+class Loader:
+    def __init__(self, filename, formatter):
+        self.filename = filename
+        self.formatter = formatter
+        self.xrefs = []
+        self.simple = { 'uint8': lambda x: int.from_bytes(x.read(1)),
+            'uint16': lambda x: int.from_bytes(x.read(2), 'little'),
+            'uint32': lambda x: int.from_bytes(x.read(4), 'little'),
+            'uint64': lambda x: int.from_bytes(x.read(8), 'little') }
+
+    def load(self):
+        with open(self.filename) as strfile:
+            ystr = yaml.load(strfile, Loader=yaml.Loader)
+            self.structure = Structure()
+            self.structure.module = self.loadpyfile(self.filename)
+            self.structure.namespace = ystr['namespace']+'.' if 'namespace' in ystr else ''
+            for yrname, yrec in ystr['types'].items():
+                self.structure.records[yrname] = PlainRecordReader.loadreader(yrname, yrec, self)
+                if self.structure.start == None:
+                    self.structure.start = self.structure.records[yrname]
+        for xref in self.xrefs:
+            field.reader = self.structure.records[xref.typename]
+        return self.structure
+
+    def getreader(self, stype, field):
+        if stype.find('[') >=0 :
+            return self.getarrayreader(stype)
+        if stype in self.simple:
+            return self.simple[stype]
+        stype = self.structure.namespace + stype
+        if stype in self.structure.records:
+            return self.structure.records[stype].reader
+        self.xrefs.append( LoaderXRef(field, typename) )
         return None
 
-def loadmeta(ymeta, formatter, filename):
-    strmeta = Structure()
-    strmeta.module = loadpyfile(filename)
-    namespace = ymeta['namespace']+'.' if 'namespace' in ymeta else ''
-    for yrname, yrec in ymeta['types'].items():
-        strmeta.records[yrname] = PlainRecordReader.loadmeta(namespace + yrname, yrec, formatter)
-        if strmeta.start == None:
-            strmeta.start = strmeta.records[yrname]
-    return strmeta
+    def getarrayreader(self, stype, field):
+        simple = stype[:stype.find('[')]
+        count = int( stype[stype.find('[')+1:stype.find(']')] )
+        if simple == 'free':
+            return lambda x: PlainRecordReader.skipfree(x, count)
+        return lambda x: PlainRecordReader.readarray(x, self.getreader(simple, field), count)
+
+    def loadpyfile(self, filename):
+        pyfile = os.path.splitext(self.filename)[0] + '.py'
+        pymodule = os.path.splitext(self.filename)[0].replace('/','.')
+        if os.path.exists(pyfile):
+            print(pyfile, 'loaded')
+            return importlib.import_module(pymodule)
+        else:
+            print(pyfile, 'is not exist, skipped')
+            return None
+
+
+def loadmeta(filename, formatter):
+    loader = Loader(filename, formatter)
+    return loader.load()
