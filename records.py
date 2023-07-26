@@ -98,7 +98,7 @@ def loadmeta(ymeta, formatter, filename):
     strmeta = Structure()
     strmeta.module = loadpyfile(filename)
     namespace = ymeta['namespace']+'.' if 'namespace' in ymeta else ''
-    for yrname, yrec in ymeta['records'].items():
+    for yrname, yrec in ymeta['types'].items():
         strmeta.records[yrname] = PlainRecordReader.loadmeta(namespace + yrname, yrec, formatter)
         if strmeta.start == None:
             strmeta.start = strmeta.records[yrname]

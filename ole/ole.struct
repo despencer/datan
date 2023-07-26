@@ -1,6 +1,6 @@
 namespace: ole
 version: 1
-records:
+types:
     header:
         - field: signature
           type: uint64
