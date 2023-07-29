@@ -36,7 +36,7 @@ class PlainRecordReader:
         for yfield in yrec:
             field = FieldReader()
             field.name = yfield['field']
-            field.reader = loader.getreader(yfield['type'], field)
+            field.reader = loader.getreader(yfield['type'], LoaderXRef(field, 'reader'))
             field.formatter = loader.formatter.get(yfield['type'])
             prec.fields.append(field)
         return prec
@@ -46,15 +46,16 @@ class PlainRecordReader:
         stream.seek(count, os.SEEK_CUR)
         return None
 
-    @classmethod
-    def readarray(cls, stream, simple, count):
-        ret = []
-        for i in range(count):
-            ret.append( simple(stream) )
-        return ret
 
-    def __repr__(self):
-        return "Record {0}\n    ".format(self.name) + "\n    ".join( map(str, self.fields) )
+class ArrayReader:
+    def __init__(self, count):
+        self.count = count
+
+    def read(self, stream):
+        ret = []
+        for i in range(self.count):
+            ret.append( self.simple(stream) )
+        return ret
 
 class Structure:
     def __init__(self):
@@ -69,9 +70,12 @@ class Structure:
         return '\n'.join( map(str, self.records.values()) )
 
 class LoaderXRef:
-    def __init__(self, field, typename)
+    def __init__(self, field, reader):
         self.field = field
-        self.typename = typename
+        self.reader = reader
+
+    def resolve(self, records):
+        setattr(self.field, self.reader, records[self.typename])
 
 class Loader:
     def __init__(self, filename, formatter):
@@ -94,10 +98,11 @@ class Loader:
                 if self.structure.start == None:
                     self.structure.start = self.structure.records[yrname]
         for xref in self.xrefs:
+            xref.resolve(self.structure.records)
             field.reader = self.structure.records[xref.typename]
         return self.structure
 
-    def getreader(self, stype, field):
+    def getreader(self, stype, xref):
         if stype.find('[') >=0 :
             return self.getarrayreader(stype)
         if stype in self.simple:
@@ -105,15 +110,18 @@ class Loader:
         stype = self.structure.namespace + stype
         if stype in self.structure.records:
             return self.structure.records[stype].reader
-        self.xrefs.append( LoaderXRef(field, typename) )
+        xref.typename = stype
+        self.xrefs.append(xref)
         return None
 
-    def getarrayreader(self, stype, field):
+    def getarrayreader(self, stype):
         simple = stype[:stype.find('[')]
         count = int( stype[stype.find('[')+1:stype.find(']')] )
         if simple == 'free':
             return lambda x: PlainRecordReader.skipfree(x, count)
-        return lambda x: PlainRecordReader.readarray(x, self.getreader(simple, field), count)
+        array = ArrayReader(count)
+        array.simple = self.getreader(simple, LoaderXRef(array, 'simple'))
+        return array.read
 
     def loadpyfile(self, filename):
         pyfile = os.path.splitext(self.filename)[0] + '.py'
