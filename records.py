@@ -16,6 +16,9 @@ class PlainRecord:
     def __repr__(self):
         return self._meta.prettyprint(self)
 
+    def getfields(self):
+        return self._meta.getfields(self)
+
 class PlainRecordReader:
     def __init__(self):
         self.fields = []
@@ -34,6 +37,12 @@ class PlainRecordReader:
         if '\n' in ff:
             return '\n'.join(  map(lambda x: '    '+x, ff.split('\n'))  )[4:]
         return ff
+
+    def getfields(self, data):
+        ret = {}
+        for f in self.fields:
+            ret[f.name] = getattr(data, f.name)
+        return ret
 
     @classmethod
     def loadreader(cls, name, yrec, loader):
