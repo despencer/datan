@@ -27,7 +27,13 @@ class PlainRecordReader:
         return data
 
     def prettyprint(self, data):
-        return self.name + ":\n"+"\n".join( map( lambda x: "    {0}: {1}".format(x.name, x.formatter(getattr(data, x.name))), self.fields) )
+        return self.name + ":\n"+"\n".join( map( lambda x: "    {0}: {1}".format(x.name, self.printfield(x, getattr(data, x.name)) ), self.fields) )
+
+    def printfield(self, field, data):
+        ff = field.formatter(data)
+        if '\n' in ff:
+            return '\n'.join(  map(lambda x: '    '+x, ff.split('\n'))  )[4:]
+        return ff
 
     @classmethod
     def loadreader(cls, name, yrec, loader):
