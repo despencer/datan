@@ -75,7 +75,7 @@ class LoaderXRef:
         self.reader = reader
 
     def resolve(self, records):
-        setattr(self.field, self.reader, records[self.typename])
+        setattr(self.field, self.reader, records[self.typename].read)
 
 class Loader:
     def __init__(self, filename, formatter):
@@ -94,12 +94,12 @@ class Loader:
             self.structure.module = self.loadpyfile(self.filename)
             self.structure.namespace = ystr['namespace']+'.' if 'namespace' in ystr else ''
             for yrname, yrec in ystr['types'].items():
-                self.structure.records[yrname] = PlainRecordReader.loadreader(yrname, yrec, self)
+                reader = PlainRecordReader.loadreader(yrname, yrec, self)
+                self.structure.records[reader.name] = reader
                 if self.structure.start == None:
-                    self.structure.start = self.structure.records[yrname]
+                    self.structure.start = reader
         for xref in self.xrefs:
             xref.resolve(self.structure.records)
-            field.reader = self.structure.records[xref.typename]
         return self.structure
 
     def getreader(self, stype, xref):
