@@ -19,5 +19,6 @@ if __name__ == '__main__':
     parser.add_argument('filename', help='file to dump')
     parser.add_argument('structures', help='structures YAML file')
     parser.add_argument('--object', default='', required=False)
+    parser.add_argument('--formatpos', default='', required=False)
     args = parser.parse_args()
     dump(args)

@@ -90,6 +90,8 @@ class LoaderXRef:
         self.reader = reader
 
     def resolve(self, records):
+        if self.typename not in records:
+            raise Exception('Type ' + self.typename + ' not found')
         setattr(self.field, self.reader, records[self.typename].read)
 
 class Loader:
@@ -108,6 +110,8 @@ class Loader:
             self.structure = Structure()
             self.structure.module = self.loadpyfile(self.filename)
             self.structure.namespace = ystr['namespace']+'.' if 'namespace' in ystr else ''
+            if self.structure.module != None:
+                self.structure.module.loadtypes(self)
             for yrname, yrec in ystr['types'].items():
                 reader = PlainRecordReader.loadreader(yrname, yrec, self)
                 self.structure.records[reader.name] = reader
@@ -124,7 +128,7 @@ class Loader:
             return self.simple[stype]
         stype = self.structure.namespace + stype
         if stype in self.structure.records:
-            return self.structure.records[stype].reader
+            return self.structure.records[stype].read
         xref.typename = stype
         self.xrefs.append(xref)
         return None
@@ -137,6 +141,10 @@ class Loader:
         array = ArrayReader(count)
         array.simple = self.getreader(simple, LoaderXRef(array, 'simple'))
         return array.read
+
+    def addtypes(self, readers):
+        for typename, loader in readers.items():
+            self.structure.records[self.structure.namespace + typename] = loader(self)
 
     def loadpyfile(self, filename):
         pyfile = os.path.splitext(self.filename)[0] + '.py'

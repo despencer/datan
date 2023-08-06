@@ -4,6 +4,8 @@ types:
     file:
         - field: header
           type: header
+        - field: chain
+          type: sectorchain
     header:
         - field: signature
           type: uint64
