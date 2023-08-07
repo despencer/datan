@@ -3,6 +3,7 @@ class Formatter:
         self.default = lambda x: ""
         self.formatters = {}
         self.rules = []
+        self.parameters = {}
 
     def get(self, typename):
         if typename in self.formatters:
@@ -55,10 +56,12 @@ def checkarray(formatter, typename):
 def createdefault():
     form = Formatter()
     form.default = lambda x: str(x)
+    stream = StreamFormatter()
     form.formatters = { 'uint8':lambda x:'{:02X}'.format(x), 'uint16':lambda x:'{:04X}'.format(x), 
                         'uint32':lambda x:'{:08X}'.format(x), 'uint64':lambda x:'{:016X}'.format(x),
-                        'stream' :lambda x: form.streamformatter(x) }
+                        'stream' :lambda x: stream.format(x) }
     form.rules.extend( [ lambda x: checkarray(form, x) ] )
+    form.parameters['stream'] = stream
     return form
 
 default = createdefault()

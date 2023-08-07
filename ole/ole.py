@@ -1,6 +1,15 @@
+import os
+
 class SectorChainStream:
-    def __init__(self, meta):
+    def __init__(self, meta, datafile):
         self._meta = meta
+        self.datafile = datafile
+
+    def seek(self, delta, postype=os.SEEK_SET):
+        return self.datafile.seek(delta, postype)
+
+    def read(self, size):
+        return self.datafile.read(size)
 
     def __repr__(self):
         return self._meta.prettyprint(self)
@@ -10,8 +19,8 @@ class SectorChainStreamReader:
     def __init__(self):
         pass
 
-    def read(self, filename):
-        return SectorChainStream(self)
+    def read(self, datafile):
+        return SectorChainStream(self, datafile)
 
     def prettyprint(self, data):
         return self.formatter(data)
