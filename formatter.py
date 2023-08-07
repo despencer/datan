@@ -13,6 +13,9 @@ class Formatter:
                 return f
         return self.default
 
+    def streamformatter(self, stream):
+        return 'A stream'
+
 def arrayformatter(a, base):
     if len(a) <= 10:
         return '[' + ' '.join( map( base, a )) + ']'
@@ -33,7 +36,8 @@ def createdefault():
     form = Formatter()
     form.default = lambda x: str(x)
     form.formatters = { 'uint8':lambda x:'{:02X}'.format(x), 'uint16':lambda x:'{:04X}'.format(x), 
-                        'uint32':lambda x:'{:08X}'.format(x), 'uint64':lambda x:'{:016X}'.format(x) }
+                        'uint32':lambda x:'{:08X}'.format(x), 'uint64':lambda x:'{:016X}'.format(x),
+                        'stream' :lambda x: form.streamformatter(x) }
     form.rules.extend( [ lambda x: checkarray(form, x) ] )
     return form
 
