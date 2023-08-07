@@ -16,6 +16,26 @@ class Formatter:
     def streamformatter(self, stream):
         return 'A stream'
 
+class StreamFormatter:
+    def __init__(self):
+        self.pos = 0
+        self.size = 256
+        self.line = 16
+
+    def format(self, datafile):
+        ret = ''
+        datafile.seek(self.pos)
+        data = datafile.read(self.size)
+        for i in range( min(self.size,len(data)) ):
+            if i%self.line == 0:
+                ret += '{:08X}'.format(self.pos+i)
+            if i%4 == 0:
+                 ret += ' '
+            ret += ' {:02X}'.format(data[i])
+            if i%self.line == (self.line-1):
+                ret += '\n'
+        return ret
+
 def arrayformatter(a, base):
     if len(a) <= 10:
         return '[' + ' '.join( map( base, a )) + ']'
