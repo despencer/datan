@@ -23,7 +23,7 @@ class SectorChainStreamReader:
         return SectorChainStream(self, datafile)
 
     def prettyprint(self, data):
-        return self.formatter(data)
+        return '\n    '+'\n'.join(  map(lambda x: '    '+x, self.formatter(data).split('\n'))  )[4:]
 
     @classmethod
     def getreader(cls, loader):
