@@ -57,7 +57,7 @@ class PlainRecordReader:
             field.reader = loader.getreader(yfield['type'], LoaderXRef(field, 'reader'))
             field.formatter = loader.formatter.get(yfield['type'])
             if 'params' in yfield:
-                for yparam in yparams:
+                for yparam in yfield['params']:
                     cls.loadparam(loader, field, yparam)
             prec.fields.append(field)
         return prec
@@ -94,7 +94,7 @@ class Structure:
     def read(self, datafile):
         root = self.start.read(datafile)
         rf = root.getfields()
-        for ll in self.lazies():
+        for ll in self.lazies:
             ll.root = rf
         return root
 

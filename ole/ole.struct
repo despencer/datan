@@ -8,7 +8,7 @@ types:
           type: sectorchain
           params:
             - name: header
-            - reference: header
+              reference: header
     header:
         - field: signature
           type: uint64
