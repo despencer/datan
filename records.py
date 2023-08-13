@@ -4,7 +4,7 @@ import importlib
 
 class FieldReader:
     def __init__(self):
-        pass
+        self.postread = []
 
     def __repr__(self):
         return self.name
@@ -26,7 +26,10 @@ class PlainRecordReader:
     def read(self, datafile):
         data = PlainRecord(self)
         for f in self.fields:
-            setattr(data, f.name, f.reader(datafile))
+            fvalue = f.reader(datafile)
+            for pr in f.postread:
+                pr(fvalue)
+            setattr(data, f.name, fvalue)
         return data
 
     def prettyprint(self, data):
@@ -53,8 +56,17 @@ class PlainRecordReader:
             field.name = yfield['field']
             field.reader = loader.getreader(yfield['type'], LoaderXRef(field, 'reader'))
             field.formatter = loader.formatter.get(yfield['type'])
+            if 'params' in yfield:
+                for yparam in yparams:
+                    cls.loadparam(loader, field, yparam)
             prec.fields.append(field)
         return prec
+
+    @classmethod
+    def loadparam(cls, loader, field, yparam):
+        ll = LazyLoader(yparam['name'], yparam['reference'])
+        loader.addlazy(ll)
+        field.postread.append( lambda value: setattr(value, yparam['name'], ll)  )
 
     @classmethod
     def skipfree(cls, stream, count):
@@ -77,9 +89,14 @@ class Structure:
         self.records = {}
         self.start = None
         self.module = None
+        self.lazies = []
 
     def read(self, datafile):
-        return self.start.read(datafile)
+        root = self.start.read(datafile)
+        rf = root.getfields()
+        for ll in self.lazies():
+            ll.root = rf
+        return root
 
     def __repr__(self):
         return '\n'.join( map(str, self.records.values()) )
@@ -93,6 +110,20 @@ class LoaderXRef:
         if self.typename not in records:
             raise Exception('Type ' + self.typename + ' not found')
         setattr(self.field, self.reader, records[self.typename].read)
+
+class LazyLoader:
+    def __init__(self, name, xref):
+        self.name = name
+        self.root = None
+        self.xref = xref
+
+    def __get__(self, instance, cls):
+        if instance is None:
+            return self
+        else:
+            value = eval(xref, self.root)
+            setattr(instance, self.name, value)
+            return value
 
 class Loader:
     def __init__(self, filename, formatter):
@@ -145,6 +176,9 @@ class Loader:
     def addtypes(self, readers):
         for typename, loader in readers.items():
             self.structure.records[self.structure.namespace + typename] = loader(self)
+
+    def addlazy(self, lazy):
+        self.structure.lazies.append(lazy)
 
     def loadpyfile(self, filename):
         pyfile = os.path.splitext(self.filename)[0] + '.py'

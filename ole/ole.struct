@@ -6,6 +6,9 @@ types:
           type: header
         - field: chain
           type: sectorchain
+          params:
+            - name: header
+            - reference: header
     header:
         - field: signature
           type: uint64
