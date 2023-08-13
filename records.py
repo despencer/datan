@@ -66,7 +66,7 @@ class PlainRecordReader:
     def loadparam(cls, loader, field, yparam):
         ll = LazyLoader(yparam['name'], yparam['reference'])
         loader.addlazy(ll)
-        field.postread.append( lambda value: setattr(value, yparam['name'], ll)  )
+        field.postread.append( lambda value: setattr(value.__class__, yparam['name'], ll)  )
 
     @classmethod
     def skipfree(cls, stream, count):
@@ -121,7 +121,7 @@ class LazyLoader:
         if instance is None:
             return self
         else:
-            value = eval(xref, self.root)
+            value = eval(self.xref, self.root)
             setattr(instance, self.name, value)
             return value
 
