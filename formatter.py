@@ -42,6 +42,9 @@ def arrayformatter(a, base):
         return '[' + ' '.join( map( base, a )) + ']'
     return '[' + ' '.join( map( base, a[:5] )) + ' ... ' + ' '.join( map( base, a[-5:] ))+ ']'
 
+def formatsub(data):
+    return '\n    '+'\n'.join(  map(lambda x: '    '+x, self.formatter(data).split('\n'))  )[4:]
+
 def freeformatter(f):
     return 'free'
 

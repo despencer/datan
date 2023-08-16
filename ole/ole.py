@@ -1,4 +1,5 @@
 import os
+import formatter
 
 ENDOFCHAIN = 0xFFFFFFFE
 
@@ -49,7 +50,7 @@ class SectorChainStream:
     def checkpos(self):
         if self.pos is None:
             self.acquiresectors(-1)
-            self.pos = ( len(self.sectors) * self.posbase ) - 1
+            self.pos = len(self.sectors) * self.posbase
         else:
             if self.pos >= ( len(self.sectors) * self.posbase ):
                 self.getfullchain()
@@ -74,7 +75,7 @@ class SectorChainStream:
     def sectorpos(self, isect):
             return (isect+1)*self.sectsize
 
-class SectorChainStreamReader:
+class SectorChainStreamReader():
     def __init__(self):
         pass
 
@@ -82,7 +83,7 @@ class SectorChainStreamReader:
         return SectorChainStream(self, datafile)
 
     def prettyprint(self, data):
-        return '\n    '+'\n'.join(  map(lambda x: '    '+x, self.formatter(data).split('\n'))  )[4:]
+        return formatter.formatsub(data)
 
     @classmethod
     def getreader(cls, loader):
@@ -90,5 +91,49 @@ class SectorChainStreamReader:
         reader.formatter = loader.formatter.get('stream')
         return reader
 
+class ByteStream:
+    def __init__(self, meta):
+        self._meta = meta
+        self.pos = 0
+
+    def seek(self, delta, postype=os.SEEK_SET):
+        if postype == os.SEEK_END:
+            self.pos = len(self.source)
+        elif postype == os.SEEK_CUR:
+            self.pos = self.pos + delta
+        else:
+            self.pos = delta
+        self.checkpos()
+        return self.pos
+
+    def read(self, size):
+        acc = self.source[self.pos:self.pos+size]
+        self.pos += len(acc)
+        self.checkpos()
+        return acc
+
+    def checkpos(self):
+        if pos > len(self.source):
+            self.pos = len(self.source)
+        if pos < 0:
+            self.pos = 0
+
+class ByteStreamReader():
+    def __init__(self):
+        pass
+
+    def read(self):
+        return ByteStream(self)
+
+    def prettyprint(self, data):
+        return formatter.formatsub(data)
+
+    @classmethod
+    def getreader(cls, loader):
+        reader = ByteStreamReader()
+        reader.formatter = loader.formatter.get('stream')
+        return reader
+
+
 def loadtypes(loader):
-    loader.addtypes( { 'sectorchain': SectorChainStreamReader.getreader } )
+    loader.addtypes( { 'sectorchain': SectorChainStreamReader.getreader }, { 'bytestream': ByteStreamReader.getreader } )

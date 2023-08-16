@@ -9,6 +9,12 @@ types:
           params:
             - name: header
               reference: header
+        - field: fat
+          type: bytestream
+          params:
+            - name: source
+              reference: header.difat
+
     header:
         - field: signature
           type: uint64
@@ -45,10 +51,5 @@ types:
         - field: numdifatsect
           type: uint32
         - field: difat
-          type: uint32[109]
-
-
-
-
-
+          type: bytes[436]
 
