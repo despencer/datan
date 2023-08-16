@@ -42,8 +42,8 @@ class SectorChainStream:
     def setup(self):
         if not self.sectors is None:
             return
-        self.sectors = [ self.header.firstdifatsect ]
         self.sectsize = 1 << self.header.sectorshift
+        self.sectors = [ self.sectorpos(self.header.firstdifatsect) ]
         self.posbase = self.sectsize - 4
 
     def checkpos(self):
@@ -69,7 +69,10 @@ class SectorChainStream:
             nextsect = int.from_bytes(sect[-4:].read(4), 'little')
             if nextsect == ENDOFCHAIN:
                 raise Exception('Unexpected end of chain')
-            self.sectors.append(nextsect)
+            self.sectors.append( self.sectorpos(nextsect) )
+
+    def sectorpos(self, isect):
+            return (isect+1)*self.sectsize
 
 class SectorChainStreamReader:
     def __init__(self):
