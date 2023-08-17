@@ -83,7 +83,7 @@ class SectorChainStreamReader():
         return SectorChainStream(self, datafile)
 
     def prettyprint(self, data):
-        return formatter.formatsub(data)
+        return formatter.formatsub(data, self.formatter)
 
     @classmethod
     def getreader(cls, loader):
@@ -113,20 +113,23 @@ class ByteStream:
         return acc
 
     def checkpos(self):
-        if pos > len(self.source):
+        if self.pos > len(self.source):
             self.pos = len(self.source)
-        if pos < 0:
+        if self.pos < 0:
             self.pos = 0
+
+    def __repr__(self):
+        return self._meta.prettyprint(self)
 
 class ByteStreamReader():
     def __init__(self):
         pass
 
-    def read(self):
+    def read(self, datafile):
         return ByteStream(self)
 
     def prettyprint(self, data):
-        return formatter.formatsub(data)
+        return formatter.formatsub(data, self.formatter)
 
     @classmethod
     def getreader(cls, loader):
@@ -136,4 +139,4 @@ class ByteStreamReader():
 
 
 def loadtypes(loader):
-    loader.addtypes( { 'sectorchain': SectorChainStreamReader.getreader }, { 'bytestream': ByteStreamReader.getreader } )
+    loader.addtypes( { 'sectorchain': SectorChainStreamReader.getreader, 'bytestream': ByteStreamReader.getreader } )

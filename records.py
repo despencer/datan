@@ -73,6 +73,9 @@ class PlainRecordReader:
         stream.seek(count, os.SEEK_CUR)
         return None
 
+    @classmethod
+    def readbytes(cls, stream, count):
+        return stream.read(count)
 
 class ArrayReader:
     def __init__(self, count):
@@ -169,6 +172,8 @@ class Loader:
         count = int( stype[stype.find('[')+1:stype.find(']')] )
         if simple == 'free':
             return lambda x: PlainRecordReader.skipfree(x, count)
+        elif simple == 'bytes':
+            return lambda x: PlainRecordReader.readbytes(x, count)
         array = ArrayReader(count)
         array.simple = self.getreader(simple, LoaderXRef(array, 'simple'))
         return array.read

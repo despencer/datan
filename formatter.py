@@ -42,8 +42,8 @@ def arrayformatter(a, base):
         return '[' + ' '.join( map( base, a )) + ']'
     return '[' + ' '.join( map( base, a[:5] )) + ' ... ' + ' '.join( map( base, a[-5:] ))+ ']'
 
-def formatsub(data):
-    return '\n    '+'\n'.join(  map(lambda x: '    '+x, self.formatter(data).split('\n'))  )[4:]
+def formatsub(data, formatter):
+    return '\n    '+'\n'.join(  map(lambda x: '    '+x, formatter(data).split('\n'))  )[4:]
 
 def freeformatter(f):
     return 'free'
@@ -62,7 +62,7 @@ def createdefault():
     stream = StreamFormatter()
     form.formatters = { 'uint8':lambda x:'{:02X}'.format(x), 'uint16':lambda x:'{:04X}'.format(x), 
                         'uint32':lambda x:'{:08X}'.format(x), 'uint64':lambda x:'{:016X}'.format(x),
-                        'stream' :lambda x: stream.format(x) }
+                        'stream' :lambda x: stream.format(x), 'bytes':lambda x:'{:02X}'.format(x) }
     form.rules.extend( [ lambda x: checkarray(form, x) ] )
     form.parameters['stream'] = stream
     return form
