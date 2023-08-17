@@ -6,7 +6,10 @@ import formatter
 def dump(args):
     print('Filename:', args.filename)
     print('Structures:', args.structures)
-    strdef = records.loadmeta(args.structures, formatter.getdefault() )
+    fmt = formatter.getdefault()
+    if len(args.formatsize) > 0:
+        fmt.parameters['stream'].size = eval(args.formatsize)
+    strdef = records.loadmeta(args.structures, fmt )
     with open(args.filename, 'rb') as datafile:
         obj = strdef.read(datafile)
         if len(args.object) > 0:
@@ -19,6 +22,6 @@ if __name__ == '__main__':
     parser.add_argument('filename', help='file to dump')
     parser.add_argument('structures', help='structures YAML file')
     parser.add_argument('--object', default='', required=False)
-    parser.add_argument('--formatpos', default='', required=False)
+    parser.add_argument('--formatsize', default='', required=False)
     args = parser.parse_args()
     dump(args)
