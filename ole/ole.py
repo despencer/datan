@@ -72,13 +72,13 @@ class SectorChainStream:
 
     def acquiresectors(self, lastpos):
         if lastpos < 0:
-            maxsect = self.header.numdifatsect+1
+            maxsect = self.header.numdifatsect
         else:
-            maxsect = lastpos // self.posbase
-        while len(self.sectors) <= maxsect:
+            maxsect = min( lastpos // self.posbase, self.header.numdifatsect)
+        while len(self.sectors) < maxsect:
             self.datafile.seek( self.sectors[-1], os.SEEK_SET)
             sect = self.datafile.read(self.sectsize)
-            nextsect = int.from_bytes(sect[-4:].read(4), 'little')
+            nextsect = int.from_bytes(sect[-4:], 'little')
             if nextsect == ENDOFCHAIN:
                 raise Exception('Unexpected end of chain')
             self.sectors.append( self.sectorpos(nextsect) )
