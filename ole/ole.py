@@ -3,6 +3,17 @@ import formatter
 
 ENDOFCHAIN = 0xFFFFFFFE
 
+class StreamReader():
+    def prettyprint(self, data):
+        return formatter.formatsub(data, self.formatter)
+
+    @classmethod
+    def getreader(cls, loader):
+        reader = cls()
+        reader.formatter = loader.formatter.get('stream')
+        return reader
+
+
 class SectorChainStream:
     def __init__(self, meta, datafile):
         self._meta = meta
@@ -75,21 +86,9 @@ class SectorChainStream:
     def sectorpos(self, isect):
             return (isect+1)*self.sectsize
 
-class SectorChainStreamReader():
-    def __init__(self):
-        pass
-
+class SectorChainStreamReader(StreamReader):
     def read(self, datafile):
         return SectorChainStream(self, datafile)
-
-    def prettyprint(self, data):
-        return formatter.formatsub(data, self.formatter)
-
-    @classmethod
-    def getreader(cls, loader):
-        reader = SectorChainStreamReader()
-        reader.formatter = loader.formatter.get('stream')
-        return reader
 
 class ByteStream:
     def __init__(self, meta):
@@ -121,22 +120,9 @@ class ByteStream:
     def __repr__(self):
         return self._meta.prettyprint(self)
 
-class ByteStreamReader():
-    def __init__(self):
-        pass
-
+class ByteStreamReader(StreamReader):
     def read(self, datafile):
         return ByteStream(self)
-
-    def prettyprint(self, data):
-        return formatter.formatsub(data, self.formatter)
-
-    @classmethod
-    def getreader(cls, loader):
-        reader = ByteStreamReader()
-        reader.formatter = loader.formatter.get('stream')
-        return reader
-
 
 def loadtypes(loader):
     loader.addtypes( { 'sectorchain': SectorChainStreamReader.getreader, 'bytestream': ByteStreamReader.getreader } )
