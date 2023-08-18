@@ -64,7 +64,7 @@ class PlainRecordReader:
 
     @classmethod
     def loadparam(cls, loader, field, yparam):
-        rx = ReadXRef(yparam['name'], yparam['reference'])
+        rx = ReaderXRef(yparam['name'], yparam['reference'])
         loader.addreadxref(rx)
         field.postread.append( lambda instance: rx.addinstance(instance) )
 
@@ -120,11 +120,11 @@ class ReaderXRef:
         self.xref = xref
         self.instances = []
 
-    def addinstance(instance):
+    def addinstance(self, instance):
         self.instances.append(instance)
 
     def resolve(self, root):
-        value = eval(self.xref, self.root)
+        value = eval(self.xref, root)
         for instance in self.instances:
             setattr(instance, self.name, value)
             instance.reset()
