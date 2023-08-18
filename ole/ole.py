@@ -22,7 +22,6 @@ class SectorChainStream:
         self.pos = 0
 
     def seek(self, delta, postype=os.SEEK_SET):
-        self.setup()
         if postype == os.SEEK_END:
             self.pos = None
         elif postype == os.SEEK_CUR:
@@ -33,7 +32,6 @@ class SectorChainStream:
         return self.pos
 
     def read(self, size):
-        self.setup()
         acc = bytes()
         self.acquiresectors(self.pos+size)
         isect = self.pos // self.posbase
@@ -51,7 +49,7 @@ class SectorChainStream:
     def __repr__(self):
         return self._meta.prettyprint(self)
 
-    def setup(self):
+    def reset(self):
         if not self.sectors is None:
             return
         self.sectsize = 1 << self.header.sectorshift
@@ -119,6 +117,9 @@ class ByteStream:
 
     def __repr__(self):
         return self._meta.prettyprint(self)
+
+    def reset(self):
+        pass
 
 class ByteStreamReader(StreamReader):
     def read(self, datafile):

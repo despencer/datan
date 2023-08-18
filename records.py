@@ -64,9 +64,9 @@ class PlainRecordReader:
 
     @classmethod
     def loadparam(cls, loader, field, yparam):
-        ll = LazyLoader(yparam['name'], yparam['reference'])
-        loader.addlazy(ll)
-        field.postread.append( lambda value: setattr(value.__class__, yparam['name'], ll)  )
+        rx = ReadXRef(yparam['name'], yparam['reference'])
+        loader.addreadxref(rx)
+        field.postread.append( lambda instance: rx.addinstance(instance) )
 
     @classmethod
     def skipfree(cls, stream, count):
@@ -92,13 +92,13 @@ class Structure:
         self.records = {}
         self.start = None
         self.module = None
-        self.lazies = []
+        self.xrefs = []
 
     def read(self, datafile):
         root = self.start.read(datafile)
         rf = root.getfields()
-        for ll in self.lazies:
-            ll.root = rf
+        for rx in self.xrefs:
+            rx.resolve(rf)
         return root
 
     def __repr__(self):
@@ -114,19 +114,21 @@ class LoaderXRef:
             raise Exception('Type ' + self.typename + ' not found')
         setattr(self.field, self.reader, records[self.typename].read)
 
-class LazyLoader:
+class ReaderXRef:
     def __init__(self, name, xref):
         self.name = name
-        self.root = None
         self.xref = xref
+        self.instances = []
 
-    def __get__(self, instance, cls):
-        if instance is None:
-            return self
-        else:
-            value = eval(self.xref, self.root)
+    def addinstance(instance):
+        self.instances.append(instance)
+
+    def resolve(self, root):
+        value = eval(self.xref, self.root)
+        for instance in self.instances:
             setattr(instance, self.name, value)
-            return value
+            instance.reset()
+        self.instances.clear()
 
 class Loader:
     def __init__(self, filename, formatter):
@@ -182,8 +184,8 @@ class Loader:
         for typename, loader in readers.items():
             self.structure.records[self.structure.namespace + typename] = loader(self)
 
-    def addlazy(self, lazy):
-        self.structure.lazies.append(lazy)
+    def addreadxref(self, rx):
+        self.structure.xrefs.append(rx)
 
     def loadpyfile(self, filename):
         pyfile = os.path.splitext(self.filename)[0] + '.py'
