@@ -151,7 +151,7 @@ class CombinedStream:
         while size >= 0:
             self.sources[isource].seek(istart)
             chunk = self.sizes[isource] - istart
-            acc += self.sources[isource].read( min(size, cnunk) )
+            acc += self.sources[isource].read( min(size, chunk) )
             self.pos += min(size, chunk)
             size -= chunk
             isource += 1
@@ -166,15 +166,15 @@ class CombinedStream:
     def mappos(self):
         istart = 0
         for isource in range(len(self.sources)):
-            if istart < self.size[isource]:
+            if istart < self.sizes[isource]:
                 return isource, istart
             istart -= self.size[isource]
         return len(self.sources), 0
 
     def reset(self):
-        self.sizes = list(map( lambda s: s.seek(0, os.SEEK_END), self.sources)
+        self.sizes = list(map( lambda s: s.seek(0, os.SEEK_END), self.sources))
 
-def FatSectorStream(CombinedStream):
+class FatSectorStream(CombinedStream):
     def __init__(self, meta, inheader, chain):
         super().__init__(meta)
         self.inheader = inheader
@@ -188,7 +188,7 @@ def FatSectorStream(CombinedStream):
         self.chain.reset()
         super().reset()
 
-def FatSectorStreamReader(StreamReader):
+class FatSectorStreamReader(StreamReader):
     def __init__(self):
         self.inheader = ByteStreamReader()
         self.chain = SectorChainStreamReader()

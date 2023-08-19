@@ -4,16 +4,6 @@ types:
     file:
         - field: header
           type: header
-        - field: chain
-          type: sectorchain
-          params:
-            - name: header
-              reference: header
-        - field: inheader
-          type: bytestream
-          params:
-            - name: source
-              reference: header.difat
         - field: fat
           type: difatstream
           params:
