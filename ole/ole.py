@@ -35,15 +35,17 @@ class SectorChainStream:
         acc = bytes()
         self.acquiresectors(self.pos+size)
         isect = self.pos // self.posbase
-        self.datafile.seek(self.sectors[isect] + (self.pos % self.posbase) )
+        istart = (self.pos % self.posbase)
+        self.datafile.seek(self.sectors[isect] + istart)
         while size >= 0:
-            acc += self.datafile.read( min(size, self.posbase) )
-            self.pos += min(size, self.posbase)
-            size -= self.posbase
+            acc += self.datafile.read( min(size, self.posbase-istart) )
+            self.pos += min(size, self.posbase-istart)
+            size -= (self.posbase-istart)
             isect += 1
             if isect >= len(self.sectors):
                 break
             self.datafile.seek(self.sectors[isect])
+            istart = 0
         return acc
 
     def __repr__(self):
@@ -62,9 +64,9 @@ class SectorChainStream:
             self.pos = len(self.sectors) * self.posbase
         else:
             if self.pos >= ( len(self.sectors) * self.posbase ):
-                self.getfullchain()
-            if self.pos >= ( len(self.sectors) * self.posbase ):
-                self.pos = ( len(self.sectors) * self.posbase ) - 1
+                self.acquiresectors(-1)
+            if self.pos > ( len(self.sectors) * self.posbase ):
+                self.pos = len(self.sectors) * self.posbase
         if self.pos < 0:
             self.pos = 0
 
@@ -125,5 +127,75 @@ class ByteStreamReader(StreamReader):
     def read(self, datafile):
         return ByteStream(self)
 
+class CombinedStream:
+    def __init__(self, meta):
+        self._meta = meta
+        self.sources = None
+        self.sizes = None
+        self.pos = 0
+
+    def seek(self, delta, postype=os.SEEK_SET):
+        if postype == os.SEEK_END:
+            self.pos = sum(self.sizes)
+        elif postype == os.SEEK_CUR:
+            self.pos = self.pos + delta
+        else:
+            self.pos = delta
+        self.pos = min (self.pos, sum(self.sizes) )
+        self.pos = max (self.pos, 0)
+        return self.pos
+
+    def read(self, size):
+        acc = bytes()
+        isource, istart = self.mappos()
+        while size >= 0:
+            self.sources[isource].seek(istart)
+            chunk = self.sizes[isource] - istart
+            acc += self.sources[isource].read( min(size, cnunk) )
+            self.pos += min(size, chunk)
+            size -= chunk
+            isource += 1
+            if isource >= len(self.sources):
+                break
+            istart = 0
+        return acc
+
+    def __repr__(self):
+        return self._meta.prettyprint(self)
+
+    def mappos(self):
+        istart = 0
+        for isource in range(len(self.sources)):
+            if istart < self.size[isource]:
+                return isource, istart
+            istart -= self.size[isource]
+        return len(self.sources), 0
+
+    def reset(self):
+        self.sizes = list(map( lambda s: s.seek(0, os.SEEK_END), self.sources)
+
+def FatSectorStream(CombinedStream):
+    def __init__(self, meta, inheader, chain):
+        super().__init__(meta)
+        self.inheader = inheader
+        self.chain = chain
+        self.sources = [ inheader, chain ]
+
+    def reset(self):
+        self.inheader.source = self.header.difat
+        self.inheader.reset()
+        self.chain.header = self.header
+        self.chain.reset()
+        super().reset()
+
+def FatSectorStreamReader(StreamReader):
+    def __init__(self):
+        self.inheader = ByteStreamReader()
+        self.chain = SectorChainStreamReader()
+
+    def read(self, datafile):
+        return FatSectorStream(self, self.inheader.read(datafile), self.chain.read(datafile) )
+
 def loadtypes(loader):
-    loader.addtypes( { 'sectorchain': SectorChainStreamReader.getreader, 'bytestream': ByteStreamReader.getreader } )
+    loader.addtypes( { 'sectorchain': SectorChainStreamReader.getreader, 'bytestream': ByteStreamReader.getreader,
+                       'difatstream':  FatSectorStreamReader.getreader } )

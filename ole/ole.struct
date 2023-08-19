@@ -9,11 +9,16 @@ types:
           params:
             - name: header
               reference: header
-        - field: fat
+        - field: inheader
           type: bytestream
           params:
             - name: source
               reference: header.difat
+        - field: fat
+          type: difatstream
+          params:
+            - name: header
+              reference: header
 
     header:
         - field: signature
