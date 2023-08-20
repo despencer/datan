@@ -54,6 +54,7 @@ class SectorChainStream:
         if not self.sectors is None:
             return False
         self.sectsize = 1 << self.header.sectorshift
+        self.pos = 0
         return True
 
     def checkpos(self):
@@ -84,6 +85,7 @@ class DIFatSectorChainStream(SectorChainStream):
             return False
         self.sectors = [ self.sectorpos(self.header.firstdifatsect) ]
         self.posbase = self.sectsize - 4
+        return True
 
     def acquiresectors(self, lastpos):
         if lastpos < 0:
@@ -101,6 +103,39 @@ class DIFatSectorChainStream(SectorChainStream):
 class DIFatSectorChainStreamReader(StreamReader):
     def read(self, datafile):
         return DIFatSectorChainStream(self, datafile)
+
+class FatStream(SectorChainStream):
+    def __init__(self, meta, datafile, fatsectors):
+        super().__init__(meta, datafile)
+        self.fatsectors = fatsectors
+
+    def reset(self):
+        if not super().reset():
+            return False
+        self.fatsectors.header = self.header
+        self.fatsectors.reset()
+        self.fatsectors.seek(0, os.SEEK_SET)
+        self.sectors = [ self.sectorpos(int.from_bytes(self.fatsectors.read(4), 'little')) ]
+        self.posbase = self.sectsize
+        return True
+
+    def acquiresectors(self, lastpos):
+        if lastpos < 0:
+            maxsect = self.header.numfatsect
+        else:
+            maxsect = min( lastpos // self.posbase, self.header.numfatsect)
+        self.fatsectors.seek( len(self.sectors) * 4 )
+        num = maxsect - len(self.sectors)
+        sectors = self.fatsectors.read(num * 4)
+        for i in range(num):
+            self.sectors.append( self.sectorpos(int.from_bytes(sectors[i:i+4], 'little') ))
+
+class FatStreamReader(StreamReader):
+    def __init__(self):
+        self.fatsectors = FatSectorStreamReader()
+
+    def read(self, datafile):
+        return FatStream(self, datafile, self.fatsectors.read(datafile) )
 
 class ByteStream:
     def __init__(self, meta):
@@ -210,4 +245,4 @@ class FatSectorStreamReader(StreamReader):
 
 def loadtypes(loader):
     loader.addtypes( { 'sectorchain': SectorChainStreamReader.getreader, 'bytestream': ByteStreamReader.getreader,
-                       'difatstream':  FatSectorStreamReader.getreader } )
+                       'difatstream': FatSectorStreamReader.getreader, 'fatstream': FatStreamReader.getreader } )

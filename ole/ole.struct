@@ -9,6 +9,11 @@ types:
           params:
             - name: header
               reference: header
+        - field: fat
+          type: fatstream
+          params:
+            - name: header
+              reference: header
 
     header:
         - field: signature
