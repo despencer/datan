@@ -4,7 +4,7 @@ types:
     file:
         - field: header
           type: header
-        - field: fat
+        - field: difat
           type: difatstream
           params:
             - name: header

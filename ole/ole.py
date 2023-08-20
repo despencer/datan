@@ -13,7 +13,6 @@ class StreamReader():
         reader.formatter = loader.formatter.get('stream')
         return reader
 
-
 class SectorChainStream:
     def __init__(self, meta, datafile):
         self._meta = meta
@@ -36,15 +35,15 @@ class SectorChainStream:
         self.acquiresectors(self.pos+size)
         isect = self.pos // self.posbase
         istart = (self.pos % self.posbase)
-        self.datafile.seek(self.sectors[isect] + istart)
         while size >= 0:
-            acc += self.datafile.read( min(size, self.posbase-istart) )
-            self.pos += min(size, self.posbase-istart)
-            size -= (self.posbase-istart)
+            self.datafile.seek(self.sectors[isect] + istart)
+            chunk = min(size, self.posbase-istart)
+            acc += self.datafile.read(chunk)
+            self.pos += chunk
+            size -= chunk
             isect += 1
             if isect >= len(self.sectors):
                 break
-            self.datafile.seek(self.sectors[isect])
             istart = 0
         return acc
 
@@ -53,10 +52,9 @@ class SectorChainStream:
 
     def reset(self):
         if not self.sectors is None:
-            return
+            return False
         self.sectsize = 1 << self.header.sectorshift
-        self.sectors = [ self.sectorpos(self.header.firstdifatsect) ]
-        self.posbase = self.sectsize - 4
+        return True
 
     def checkpos(self):
         if self.pos is None:
@@ -69,6 +67,23 @@ class SectorChainStream:
                 self.pos = len(self.sectors) * self.posbase
         if self.pos < 0:
             self.pos = 0
+
+    def sectorpos(self, isect):
+            return (isect+1)*self.sectsize
+
+class SectorChainStreamReader(StreamReader):
+    def read(self, datafile):
+        return SectorChainStream(self, datafile)
+
+class DIFatSectorChainStream(SectorChainStream):
+    def __init__(self, meta, datafile):
+        super().__init__(meta, datafile)
+
+    def reset(self):
+        if not super().reset():
+            return False
+        self.sectors = [ self.sectorpos(self.header.firstdifatsect) ]
+        self.posbase = self.sectsize - 4
 
     def acquiresectors(self, lastpos):
         if lastpos < 0:
@@ -83,12 +98,9 @@ class SectorChainStream:
                 raise Exception('Unexpected end of chain')
             self.sectors.append( self.sectorpos(nextsect) )
 
-    def sectorpos(self, isect):
-            return (isect+1)*self.sectsize
-
-class SectorChainStreamReader(StreamReader):
+class DIFatSectorChainStreamReader(StreamReader):
     def read(self, datafile):
-        return SectorChainStream(self, datafile)
+        return DIFatSectorChainStream(self, datafile)
 
 class ByteStream:
     def __init__(self, meta):
@@ -191,7 +203,7 @@ class FatSectorStream(CombinedStream):
 class FatSectorStreamReader(StreamReader):
     def __init__(self):
         self.inheader = ByteStreamReader()
-        self.chain = SectorChainStreamReader()
+        self.chain = DIFatSectorChainStreamReader()
 
     def read(self, datafile):
         return FatSectorStream(self, self.inheader.read(datafile), self.chain.read(datafile) )
