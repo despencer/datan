@@ -124,11 +124,11 @@ class FatStream(SectorChainStream):
             maxsect = self.header.numfatsect
         else:
             maxsect = min( lastpos // self.posbase, self.header.numfatsect)
-        self.fatsectors.seek( len(self.sectors) * 4 )
+        self.fatsectors.seek( len(self.sectors) * 4, os.SEEK_SET )
         num = maxsect - len(self.sectors)
         sectors = self.fatsectors.read(num * 4)
         for i in range(num):
-            self.sectors.append( self.sectorpos(int.from_bytes(sectors[i:i+4], 'little') ))
+            self.sectors.append( self.sectorpos(int.from_bytes(sectors[i*4:i*4+4], 'little') ))
 
 class FatStreamReader(StreamReader):
     def __init__(self):
@@ -211,7 +211,7 @@ class CombinedStream:
         return self._meta.prettyprint(self)
 
     def mappos(self):
-        istart = 0
+        istart = self.pos
         for isource in range(len(self.sources)):
             if istart < self.sizes[isource]:
                 return isource, istart
