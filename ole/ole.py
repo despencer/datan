@@ -215,7 +215,7 @@ class CombinedStream:
         for isource in range(len(self.sources)):
             if istart < self.sizes[isource]:
                 return isource, istart
-            istart -= self.size[isource]
+            istart -= self.sizes[isource]
         return len(self.sources), 0
 
     def reset(self):
