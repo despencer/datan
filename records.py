@@ -26,7 +26,7 @@ class PlainRecordReader:
     def read(self, datafile):
         data = PlainRecord(self)
         for f in self.fields:
-            fvalue = f.reader(datafile)
+            fvalue = f.reader.read(datafile)
             for pr in f.postread:
                 pr(fvalue)
             setattr(data, f.name, fvalue)
@@ -68,14 +68,20 @@ class PlainRecordReader:
         loader.addreadxref(rx)
         field.postread.append( lambda instance: rx.addinstance(instance) )
 
-    @classmethod
-    def skipfree(cls, stream, count):
-        stream.seek(count, os.SEEK_CUR)
+class FreeReader:
+    def __init__(self, count):
+        self.count = count
+
+    def read(self, stream):
+        stream.seek(self.count, os.SEEK_CUR)
         return None
 
-    @classmethod
-    def readbytes(cls, stream, count):
-        return stream.read(count)
+class BytesReader:
+    def __init__(self, count):
+        self.count = count
+
+    def read(self, stream):
+        return stream.read(self.count)
 
 class ArrayReader:
     def __init__(self, count):
@@ -84,7 +90,7 @@ class ArrayReader:
     def read(self, stream):
         ret = []
         for i in range(self.count):
-            ret.append( self.simple(stream) )
+            ret.append( self.simple.read(stream) )
         return ret
 
 class Structure:
@@ -112,7 +118,7 @@ class LoaderXRef:
     def resolve(self, records):
         if self.typename not in records:
             raise Exception('Type ' + self.typename + ' not found')
-        setattr(self.field, self.reader, records[self.typename].read)
+        setattr(self.field, self.reader, records[self.typename])
 
 class ReaderXRef:
     def __init__(self, name, xref):
@@ -130,15 +136,20 @@ class ReaderXRef:
             instance.reset()
         self.instances.clear()
 
+class IntReader:
+    def __init__(self, size):
+        self.size = size
+
+    def read(self, datafile):
+        return int.from_bytes(datafile.read(self.size), 'little')
+
 class Loader:
     def __init__(self, filename, formatter):
         self.filename = filename
         self.formatter = formatter
         self.xrefs = []
-        self.simple = { 'uint8': lambda x: int.from_bytes(x.read(1)),
-            'uint16': lambda x: int.from_bytes(x.read(2), 'little'),
-            'uint32': lambda x: int.from_bytes(x.read(4), 'little'),
-            'uint64': lambda x: int.from_bytes(x.read(8), 'little') }
+        self.simple = { 'uint8': IntReader(1), 'uint16': IntReader(2),
+            'uint32': IntReader(4), 'uint64': IntReader(8) }
 
     def load(self):
         with open(self.filename) as strfile:
@@ -164,7 +175,7 @@ class Loader:
             return self.simple[stype]
         stype = self.structure.namespace + stype
         if stype in self.structure.records:
-            return self.structure.records[stype].read
+            return self.structure.records[stype]
         xref.typename = stype
         self.xrefs.append(xref)
         return None
@@ -173,12 +184,12 @@ class Loader:
         simple = stype[:stype.find('[')]
         count = int( stype[stype.find('[')+1:stype.find(']')] )
         if simple == 'free':
-            return lambda x: PlainRecordReader.skipfree(x, count)
+            return FreeReader(count)
         elif simple == 'bytes':
-            return lambda x: PlainRecordReader.readbytes(x, count)
+            return BytesReader(count)
         array = ArrayReader(count)
         array.simple = self.getreader(simple, LoaderXRef(array, 'simple'))
-        return array.read
+        return array
 
     def addtypes(self, readers):
         for typename, loader in readers.items():
