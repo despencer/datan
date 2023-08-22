@@ -1,17 +1,7 @@
 import os
-import formatter
+import streams
 
 ENDOFCHAIN = 0xFFFFFFFE
-
-class StreamReader():
-    def prettyprint(self, data):
-        return formatter.formatsub(data, self.formatter)
-
-    @classmethod
-    def getreader(cls, loader):
-        reader = cls()
-        reader.formatter = loader.formatter.get('stream')
-        return reader
 
 class SectorChainStream:
     def __init__(self, meta, datafile):
@@ -72,7 +62,7 @@ class SectorChainStream:
     def sectorpos(self, isect):
             return (isect+1)*self.sectsize
 
-class SectorChainStreamReader(StreamReader):
+class SectorChainStreamReader(streams.StreamReader):
     def read(self, datafile):
         return SectorChainStream(self, datafile)
 
@@ -100,7 +90,7 @@ class DIFatSectorChainStream(SectorChainStream):
                 raise Exception('Unexpected end of chain')
             self.sectors.append( self.sectorpos(nextsect) )
 
-class DIFatSectorChainStreamReader(StreamReader):
+class DIFatSectorChainStreamReader(streams.StreamReader):
     def read(self, datafile):
         return DIFatSectorChainStream(self, datafile)
 
@@ -130,7 +120,7 @@ class FatStream(SectorChainStream):
         for i in range(num):
             self.sectors.append( self.sectorpos(int.from_bytes(sectors[i*4:i*4+4], 'little') ))
 
-class FatStreamReader(StreamReader):
+class FatStreamReader(streams.StreamReader):
     def __init__(self):
         self.fatsectors = FatSectorStreamReader()
 
@@ -170,7 +160,7 @@ class ByteStream:
     def reset(self):
         pass
 
-class ByteStreamReader(StreamReader):
+class ByteStreamReader(streams.StreamReader):
     def read(self, datafile):
         return ByteStream(self)
 
@@ -235,7 +225,7 @@ class FatSectorStream(CombinedStream):
         self.chain.reset()
         super().reset()
 
-class FatSectorStreamReader(StreamReader):
+class FatSectorStreamReader(streams.StreamReader):
     def __init__(self):
         self.inheader = ByteStreamReader()
         self.chain = DIFatSectorChainStreamReader()

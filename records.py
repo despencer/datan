@@ -143,6 +143,9 @@ class IntReader:
     def read(self, datafile):
         return int.from_bytes(datafile.read(self.size), 'little')
 
+    def getsize(self):
+        return self.size
+
 class Loader:
     def __init__(self, filename, formatter):
         self.filename = filename
