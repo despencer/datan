@@ -1,6 +1,7 @@
 import yaml
 import os
 import importlib
+import streams
 
 class FieldReader:
     def __init__(self):
@@ -59,6 +60,8 @@ class PlainRecordReader:
             if 'params' in yfield:
                 for yparam in yfield['params']:
                     cls.loadparam(loader, field, yparam)
+            if hasattr(field.reader, 'loadmeta'):
+                field.reader.loadmeta(loader, yfield)
             prec.fields.append(field)
         return prec
 
@@ -153,6 +156,7 @@ class Loader:
         self.xrefs = []
         self.simple = { 'uint8': IntReader(1), 'uint16': IntReader(2),
             'uint32': IntReader(4), 'uint64': IntReader(8) }
+        streams.loadtypes(self)
 
     def load(self):
         with open(self.filename) as strfile:

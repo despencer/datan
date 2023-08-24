@@ -8,17 +8,22 @@ class StreamReader():
     @classmethod
     def getreader(cls, loader):
         reader = cls()
-        reader.formatter = loader.formatter.get('stream')
+        reader.formatter = reader.getformatter(loader)
         return reader
 
+    def getformatter(self, loader):
+        return loader.formatter.get('stream')
+
 class RecordStream:
-    def __init__(self, meta):
+    def __init__(self, meta, record):
         self._meta = meta
+        self.record = record
         self.pos = 0
+        self.size = self.record.getsize()
 
     def seek(self, delta, postype=os.SEEK_SET):
         if postype == os.SEEK_END:
-            self.pos = len(self.source)
+            self.pos = len(self.source) // self.size
         elif postype == os.SEEK_CUR:
             self.pos = self.pos + delta
         else:
@@ -27,14 +32,16 @@ class RecordStream:
         return self.pos
 
     def read(self, size):
-        acc = self.source[self.pos:self.pos+size]
-        self.pos += len(acc)
+        self.source.seek(self.pos * self.size, os.SEEK_SET)
+        instance = self.record.read(self.source)
+        self.pos += 1
         self.checkpos()
-        return acc
+        return instance
 
     def checkpos(self):
-        if self.pos > len(self.source):
-            self.pos = len(self.source)
+        mx = len(self.source) // self.size
+        if self.pos > mx:
+            self.pos = mx
         if self.pos < 0:
             self.pos = 0
 
@@ -46,5 +53,14 @@ class RecordStream:
 
 class RecordStreamReader(StreamReader):
     def read(self, datafile):
-        return ByteStream(self)
+        return RecordStream(self, self.record)
 
+    def loadmeta(self, loader, yfield):
+        self.record = loader.getreader(yfield['record'], LoaderXRef(field, 'record'))
+
+    def getformatter(self, loader):
+        return loader.formatter.get('recordstream')
+
+
+def loadtypes(loader):
+    loader.addtypes( { 'recordstream': RecordStreamReader.getreader } )

@@ -9,11 +9,17 @@ types:
           params:
             - name: header
               reference: header
-        - field: fat
+        - field: fatstream
           type: fatstream
           params:
             - name: header
               reference: header
+        - field: fat
+          type: recordstream
+          record: uint32
+          params:
+            - name: source
+              reference: fatstream
 
     header:
         - field: signature
