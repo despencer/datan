@@ -156,14 +156,14 @@ class Loader:
         self.xrefs = []
         self.simple = { 'uint8': IntReader(1), 'uint16': IntReader(2),
             'uint32': IntReader(4), 'uint64': IntReader(8) }
-        streams.loadtypes(self)
 
     def load(self):
         with open(self.filename) as strfile:
             ystr = yaml.load(strfile, Loader=yaml.Loader)
             self.structure = Structure()
-            self.structure.module = self.loadpyfile(self.filename)
             self.structure.namespace = ystr['namespace']+'.' if 'namespace' in ystr else ''
+            streams.loadtypes(self)
+            self.structure.module = self.loadpyfile(self.filename)
             if self.structure.module != None:
                 self.structure.module.loadtypes(self)
             for yrname, yrec in ystr['types'].items():

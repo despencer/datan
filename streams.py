@@ -1,5 +1,6 @@
 import os
 import formatter
+import records
 
 class StreamReader():
     def prettyprint(self, data):
@@ -33,10 +34,15 @@ class RecordStream:
 
     def read(self, size):
         self.source.seek(self.pos * self.size, os.SEEK_SET)
-        instance = self.record.read(self.source)
-        self.pos += 1
+        mx = len(self.source) // self.size
+        acc = []
+        while size > 0 and self.pos < mx:
+            instance = self.record.read(self.source)
+            self.pos += 1
+            size -= 1
+            acc.append(instance)
         self.checkpos()
-        return instance
+        return acc
 
     def checkpos(self):
         mx = len(self.source) // self.size
@@ -56,7 +62,7 @@ class RecordStreamReader(StreamReader):
         return RecordStream(self, self.record)
 
     def loadmeta(self, loader, yfield):
-        self.record = loader.getreader(yfield['record'], LoaderXRef(field, 'record'))
+        self.record = loader.getreader(yfield['record'], records.LoaderXRef(self, 'record'))
 
     def getformatter(self, loader):
         return loader.formatter.get('recordstream')

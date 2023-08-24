@@ -40,15 +40,14 @@ class StreamFormatter:
 class RecordStreamFormatter:
     def __init__(self):
         self.pos = 0
-        self.size = 256
-        self.line = 16
+        self.size = 16
 
     def format(self, datafile):
         ret = ''
         datafile.seek(self.pos)
         data = datafile.read(self.size)
         for i in range( min(self.size,len(data)) ):
-            ret += '{:08X}\n'.format(self.pos+i) + indent(str(data[i]))
+            ret += '{:08X}\n'.format(self.pos+i) + indent(str(data[i])) + '\n'
         return ret
 
 def arrayformatter(a, base):
@@ -57,6 +56,8 @@ def arrayformatter(a, base):
     return '[' + ' '.join( map( base, a[:5] )) + ' ... ' + ' '.join( map( base, a[-5:] ))+ ']'
 
 def indent(text):
+    if '\n' not in text:
+        return '    '+text
     return '\n    '+'\n'.join(  map(lambda x: '    '+x, text.split('\n'))  )[4:]
 
 def formatsub(data, formatter):
