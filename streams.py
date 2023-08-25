@@ -63,9 +63,13 @@ class RecordStreamReader(StreamReader):
 
     def loadmeta(self, loader, yfield):
         self.record = loader.getreader(yfield['record'], records.LoaderXRef(self, 'record'))
+        self.recformatter = loader.formatter.get(yfield['record'])
 
     def getformatter(self, loader):
         return loader.formatter.get('recordstream')
+
+    def prettyprint(self, data):
+        return self.formatter(data, record=self.recformatter)
 
 
 def loadtypes(loader):

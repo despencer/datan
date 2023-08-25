@@ -42,12 +42,14 @@ class RecordStreamFormatter:
         self.pos = 0
         self.size = 16
 
-    def format(self, datafile):
+    def format(self, datafile, record=None):
         ret = ''
         datafile.seek(self.pos)
         data = datafile.read(self.size)
+        if record is None:
+            record = str
         for i in range( min(self.size,len(data)) ):
-            ret += '{:08X}\n'.format(self.pos+i) + indent(str(data[i])) + '\n'
+            ret += '{:08X}\n'.format(self.pos+i) + indent(record(data[i])) + '\n'
         return ret
 
 def arrayformatter(a, base):
@@ -81,7 +83,7 @@ def createdefault():
     recordstream = RecordStreamFormatter()
     form.formatters = { 'uint8':lambda x:'{:02X}'.format(x), 'uint16':lambda x:'{:04X}'.format(x),
                         'uint32':lambda x:'{:08X}'.format(x), 'uint64':lambda x:'{:016X}'.format(x),
-                        'stream' :lambda x: stream.format(x), 'recordstream' :lambda x: recordstream.format(x),
+                        'stream' :lambda x: stream.format(x), 'recordstream' :lambda x, **kv: recordstream.format(x, **kv),
                         'bytes':lambda x:'{:02X}'.format(x) }
     form.rules.extend( [ lambda x: checkarray(form, x) ] )
     form.parameters['stream'] = stream
