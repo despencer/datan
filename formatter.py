@@ -76,6 +76,28 @@ def checkarray(formatter, typename):
         return freeformatter
     return lambda x: arrayformatter(x, formatter.get(base))
 
+class StreamParameters:
+    def __init__(self, *formatters):
+        self.formatters = [ *formatters ]
+
+    @property
+    def pos(self):
+        return None
+
+    @pos.setter
+    def pos(self, value):
+        for s in self.formatters:
+            s.pos = value
+
+    @property
+    def size(self):
+        return None
+
+    @size.setter
+    def size(self, value):
+        for s in self.formatters:
+            s.size = value
+
 def createdefault():
     form = Formatter()
     form.default = lambda x: str(x)
@@ -86,7 +108,7 @@ def createdefault():
                         'stream' :lambda x: stream.format(x), 'recordstream' :lambda x, **kv: recordstream.format(x, **kv),
                         'bytes':lambda x:'{:02X}'.format(x) }
     form.rules.extend( [ lambda x: checkarray(form, x) ] )
-    form.parameters['stream'] = stream
+    form.parameters['stream'] = StreamParameters( stream, recordstream )
     return form
 
 default = createdefault()
