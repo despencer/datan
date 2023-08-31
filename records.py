@@ -58,16 +58,17 @@ class PlainRecordReader:
             field.reader = loader.getreader(yfield['type'], LoaderXRef(field, 'reader'))
             field.formatter = loader.formatter.get(yfield['type'])
             if 'params' in yfield:
-                for yparam in yfield['params']:
-                    cls.loadparam(loader, field, yparam)
+                cls.loadparam(loader, field, yfield['params'])
             if hasattr(field.reader, 'loadmeta'):
                 field.reader.loadmeta(loader, yfield)
             prec.fields.append(field)
         return prec
 
     @classmethod
-    def loadparam(cls, loader, field, yparam):
-        rx = ReaderXRef(yparam['name'], yparam['reference'])
+    def loadparam(cls, loader, field, yparams):
+        rx = ReaderXRef()
+        for yparam in yparams:
+            rx.addparam(yparam['name'], yparam['reference'])
         loader.addreadxref(rx)
         field.postread.append( lambda instance: rx.addinstance(instance) )
 
@@ -124,18 +125,22 @@ class LoaderXRef:
         setattr(self.field, self.reader, records[self.typename])
 
 class ReaderXRef:
-    def __init__(self, name, xref):
-        self.name = name
-        self.xref = xref
+    def __init__(self):
+        self.params = {}
         self.instances = []
+
+    def addparam(self, name, xref):
+        self.params[name] = xref
 
     def addinstance(self, instance):
         self.instances.append(instance)
 
     def resolve(self, root):
-        value = eval(self.xref, root)
+        for name, xref in self.params.items():
+            value = eval(xref, root)
+            for instance in self.instances:
+                setattr(instance, self.name, value)
         for instance in self.instances:
-            setattr(instance, self.name, value)
             instance.reset()
         self.instances.clear()
 

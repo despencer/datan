@@ -133,6 +133,32 @@ class FatStreamReader(streams.StreamReader):
     def read(self, datafile):
         return FatStream(self, datafile, self.fatsectors.read(datafile) )
 
+class DataStream(SectorChainStream):
+    def __init__(self, meta, datafile):
+        super().__init__(meta, datafile)
+
+    def reset(self):
+        if not super().reset():
+            return False
+        self.sectors = [ self.sectorpos(self.start) ]
+        self.isectors = [ self.start ]
+        self.posbase = self.sectsize
+        return True
+
+    def acquiresectors(self, lastpos):
+        if self.isectors[-1] == ENDOFCHAIN:
+            return
+        maxpos = len(self.isectors) * self.sectsize
+        while maxpos < lastpos or lastpos < 0:
+            self.fat.seek(self.isectors[-1], os.SEEK_SET)
+            next = self.fat.read(1)[0]
+            self.isectors.append(next)
+            if next == ENDOFCHAIN:
+                return
+            self.sectors.append( self.sectorpos(next) )
+            maxpos += self.sectsize
+
+
 class ByteStream:
     def __init__(self, meta):
         self._meta = meta

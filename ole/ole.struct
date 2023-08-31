@@ -20,6 +20,15 @@ types:
           params:
             - name: source
               reference: fatstream
+        - field: dirstream
+          type: datastream
+          params:
+            - name: header
+              reference: header
+            - name: fat
+              reference: fat
+            - name: start
+              reference: header.firstdirsect
 
     header:
         - field: signature
