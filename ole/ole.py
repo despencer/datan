@@ -158,6 +158,9 @@ class DataStream(SectorChainStream):
             self.sectors.append( self.sectorpos(next) )
             maxpos += self.sectsize
 
+class DataStreamReader(streams.StreamReader):
+    def read(self, datafile):
+        return DataStream(self, datafile)
 
 class ByteStream:
     def __init__(self, meta):
@@ -267,4 +270,5 @@ class FatSectorStreamReader(streams.StreamReader):
 
 def loadtypes(loader):
     loader.addtypes( { 'sectorchain': SectorChainStreamReader.getreader, 'bytestream': ByteStreamReader.getreader,
-                       'difatstream': FatSectorStreamReader.getreader, 'fatstream': FatStreamReader.getreader } )
+                       'difatstream': FatSectorStreamReader.getreader, 'fatstream': FatStreamReader.getreader,
+                       'datastream': DataStreamReader.getreader } )

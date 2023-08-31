@@ -139,7 +139,7 @@ class ReaderXRef:
         for name, xref in self.params.items():
             value = eval(xref, root)
             for instance in self.instances:
-                setattr(instance, self.name, value)
+                setattr(instance, name, value)
         for instance in self.instances:
             instance.reset()
         self.instances.clear()
