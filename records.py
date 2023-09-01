@@ -48,6 +48,12 @@ class PlainRecordReader:
             ret[f.name] = getattr(data, f.name)
         return ret
 
+    def getsize(self):
+        size = 0
+        for f in self.fields:
+            size += f.reader.getsize()
+        return size
+
     @classmethod
     def loadreader(cls, name, yrec, loader):
         prec = PlainRecordReader()
@@ -80,12 +86,18 @@ class FreeReader:
         stream.seek(self.count, os.SEEK_CUR)
         return None
 
+    def getsize(self):
+        return self.count
+
 class BytesReader:
     def __init__(self, count):
         self.count = count
 
     def read(self, stream):
         return stream.read(self.count)
+
+    def getsize(self):
+        return self.count
 
 class ArrayReader:
     def __init__(self, count):
@@ -187,7 +199,7 @@ class Loader:
             return self.simple[stype]
         stype = self.structure.namespace + stype
         if stype in self.structure.records:
-            return self.structure.records[stype]
+            return self.structure.records[stype](self)
         xref.typename = stype
         self.xrefs.append(xref)
         return None
@@ -205,7 +217,7 @@ class Loader:
 
     def addtypes(self, readers):
         for typename, loader in readers.items():
-            self.structure.records[self.structure.namespace + typename] = loader(self)
+            self.structure.records[self.structure.namespace + typename] = loader
 
     def addreadxref(self, rx):
         self.structure.xrefs.append(rx)

@@ -29,6 +29,12 @@ types:
               reference: fat
             - name: start
               reference: header.firstdirsect
+        - field: dir
+          type: recordstream
+          record: direntry
+          params:
+            - name: source
+              reference: dirstream
 
     header:
         - field: signature
@@ -68,3 +74,10 @@ types:
         - field: difat
           type: bytes[436]
 
+    direntry:
+        - field: name
+          type: bytes[64]
+        - field: namesize
+          type: uint16
+        - field: padder
+          type: free[62]
