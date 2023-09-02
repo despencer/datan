@@ -5,6 +5,7 @@ import streams
 
 class FieldReader:
     def __init__(self):
+        self.preread = []
         self.postread = []
 
     def __repr__(self):
@@ -27,6 +28,8 @@ class PlainRecordReader:
     def read(self, datafile):
         data = PlainRecord(self)
         for f in self.fields:
+            for pr in f.preread:
+                pr(data)
             fvalue = f.reader.read(datafile)
             for pr in f.postread:
                 pr(data, fvalue)
@@ -62,12 +65,17 @@ class PlainRecordReader:
         for yfield in yrec:
             field = FieldReader()
             field.name = yfield['field']
-            field.reader = loader.getreader(yfield['type'], LoaderXRef(field, 'reader'))
-            field.formatter = loader.formatter.get(yfield['type'])
-            if 'params' in yfield:
-                cls.loadparam(loader, field, yfield['params'])
-            if hasattr(field.reader, 'loadmeta'):
-                field.reader.loadmeta(loader, yfield)
+            if 'function' in yfield:
+                field.reader = FunctionReader(yfield['function'])
+                field.preread.append( lambda context: field.reader.setcontext(context) )
+                field.formatter = str
+            else:
+                field.reader = loader.getreader(yfield['type'], LoaderXRef(field, 'reader'))
+                field.formatter = loader.formatter.get(yfield['type'])
+                if 'params' in yfield:
+                    cls.loadparam(loader, field, yfield['params'])
+                if hasattr(field.reader, 'loadmeta'):
+                    field.reader.loadmeta(loader, yfield)
             prec.fields.append(field)
         return prec
 
@@ -199,6 +207,20 @@ class IntReader:
     def getsize(self):
         return self.size
 
+class FunctionReader:
+    def __init__(self, func):
+        self.func = func
+
+    def setcontext(self, instance):
+        self.context = instance.getfields()
+
+    def read(self, datafile):
+        return eval(self.func, self.context)
+
+    def getsize(self):
+        return 0
+
+
 class Loader:
     def __init__(self, filename, formatter):
         self.filename = filename
@@ -212,7 +234,7 @@ class Loader:
             ystr = yaml.load(strfile, Loader=yaml.Loader)
             self.structure = Structure()
             self.structure.namespace = ystr['namespace']+'.' if 'namespace' in ystr else ''
-            streams.loadtypes(self)
+            self.loadtypes()
             self.structure.module = self.loadpyfile(self.filename)
             if self.structure.module != None:
                 self.structure.module.loadtypes(self)
@@ -224,6 +246,9 @@ class Loader:
         for xref in self.xrefs:
             xref.resolve(self.structure.records)
         return self.structure
+
+    def loadtypes(self):
+        streams.loadtypes(self)
 
     def getreader(self, stype, xref):
         if stype.find('[') >=0 :

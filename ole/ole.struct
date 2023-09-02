@@ -75,9 +75,12 @@ types:
           type: bytes[436]
 
     direntry:
-        - field: name
+        - field: rawname
           type: bytes[64]
         - field: namesize
           type: uint16
         - field: padder
           type: free[62]
+        - field: name
+          function: "rawname.decode('utf-16')[:namesize]"
+
