@@ -29,7 +29,7 @@ class PlainRecordReader:
         for f in self.fields:
             fvalue = f.reader.read(datafile)
             for pr in f.postread:
-                pr(fvalue)
+                pr(data, fvalue)
             setattr(data, f.name, fvalue)
         return data
 
@@ -45,7 +45,8 @@ class PlainRecordReader:
     def getfields(self, data):
         ret = {}
         for f in self.fields:
-            ret[f.name] = getattr(data, f.name)
+            if hasattr(data, f.name):
+                ret[f.name] = getattr(data, f.name)
         return ret
 
     def getsize(self):
@@ -72,11 +73,21 @@ class PlainRecordReader:
 
     @classmethod
     def loadparam(cls, loader, field, yparams):
-        rx = ReaderXRef()
+        grx = ReaderXRef()
+        lrx = LocalRef()
         for yparam in yparams:
-            rx.addparam(yparam['name'], yparam['reference'])
-        loader.addreadxref(rx)
-        field.postread.append( lambda instance: rx.addinstance(instance) )
+            if 'global' in yparam and yparam['global']:
+                grx.addparam(yparam['name'], yparam['reference'])
+            else:
+                lrx.addparam(yparam['name'], yparam['reference'])
+        if len(lrx) > 0:
+            if len(grx) > 0:
+                field.postread.append( lambda context, instance: lrx.resolve(context, instance, False) )
+            else:
+                field.postread.append( lambda context, instance: lrx.resolve(context, instance, True) )
+        if len(grx) > 0:
+            loader.addreadxref(grx)
+            field.postread.append( lambda context, instance: rx.addinstance(instance) )
 
 class FreeReader:
     def __init__(self, count):
@@ -136,6 +147,24 @@ class LoaderXRef:
             raise Exception('Type ' + self.typename + ' not found')
         setattr(self.field, self.reader, records[self.typename])
 
+class LocalRef:
+    def __init__(self):
+        self.params = {}
+
+    def addparam(self, name, xref):
+        self.params[name] = xref
+
+    def resolve(self, instance, field, reset):
+        context = instance.getfields()
+        for name, xref in self.params.items():
+            value = eval(xref, context)
+            setattr(field, name, value)
+        if reset:
+            field.reset()
+
+    def __len__(self):
+        return len(self.params)
+
 class ReaderXRef:
     def __init__(self):
         self.params = {}
@@ -155,6 +184,10 @@ class ReaderXRef:
         for instance in self.instances:
             instance.reset()
         self.instances.clear()
+
+    def __len__(self):
+        return len(self.params)
+
 
 class IntReader:
     def __init__(self, size):
