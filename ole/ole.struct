@@ -79,8 +79,30 @@ types:
           type: bytes[64]
         - field: namesize
           type: uint16
+        - field: type
+          type: uint8
+        - field: color
+          type: uint8
+        - field: left
+          type: uint32
+        - field: right
+          type: uint32
+        - field: child
+          type: uint32
+        - field: clsid
+          type: bytes[16]
+        - field: userflags
+          type: uint32
+        - field: create
+          type: uint64
+        - field: modify
+          type: uint64
+        - field: start
+          type: uint32
+        - field: size
+          type: uint32
         - field: padder
-          type: free[62]
+          type: free[4]
         - field: name
           function: "rawname.decode('utf-16')[:namesize]"
 
