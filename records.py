@@ -58,10 +58,13 @@ class PlainRecordReader:
             size += f.reader.getsize()
         return size
 
+    def getreader(self, loader):
+        return self
+
     @classmethod
-    def loadreader(cls, name, yrec, loader):
+    def loadreader(cls, name, yrec, module):
         prec = PlainRecordReader()
-        prec.name = loader.structure.namespace + name
+        prec.name = module.namespace + name
         for yfield in yrec:
             field = FieldReader()
             field.name = yfield['field']
@@ -70,12 +73,12 @@ class PlainRecordReader:
                 field.preread.append( lambda context: field.reader.setcontext(context) )
                 field.formatter = str
             else:
-                field.reader = loader.getreader(yfield['type'], LoaderXRef(field, 'reader'))
-                field.formatter = loader.formatter.get(yfield['type'])
+                field.reader = module.getreader(yfield['type'], LoaderXRef(field, 'reader', meta=yfield))
+                field.formatter = module.loader.formatter.get(yfield['type'])
                 if 'params' in yfield:
-                    cls.loadparam(loader, field, yfield['params'])
+                    cls.loadparam(module.loader, field, yfield['params'])
                 if hasattr(field.reader, 'loadmeta'):
-                    field.reader.loadmeta(loader, yfield)
+                    field.reader.loadmeta(module, yfield)
             prec.fields.append(field)
         return prec
 
@@ -146,14 +149,27 @@ class Structure:
         return '\n'.join( map(str, self.records.values()) )
 
 class LoaderXRef:
-    def __init__(self, field, reader):
+    def __init__(self, field, reader, meta=None):
         self.field = field
         self.reader = reader
+        self.meta = meta
 
-    def resolve(self, records):
-        if self.typename not in records:
+    def resolve(self):
+        resolved = None
+        records = self.module.loader.structure.records
+        if self.typename in records:
+            resolved = records[self.typename]
+        else:
+            if '.' in self.typename:
+                typename = self.typename.split('.')[-1]
+                if typename in records:
+                    resolved = records[typename]
+        if resolved is None:
             raise Exception('Type ' + self.typename + ' not found')
-        setattr(self.field, self.reader, records[self.typename])
+        reader = resolved(self.module.loader)
+        if self.meta is not None and hasattr(reader, 'loadmeta'):
+            reader.loadmeta(self.module, self.meta)
+        setattr(self.field, self.reader, reader )
 
 class LocalRef:
     def __init__(self):
@@ -220,46 +236,26 @@ class FunctionReader:
     def getsize(self):
         return 0
 
+class LoaderModule:
+    def __init__(self, loader):
+        self.loader = loader
+        self.namespace = ''
 
-class Loader:
-    def __init__(self, filename, formatter):
-        self.filename = filename
-        self.formatter = formatter
-        self.xrefs = []
-        self.simple = { 'uint8': IntReader(1), 'uint16': IntReader(2),
-            'uint32': IntReader(4), 'uint64': IntReader(8) }
-
-    def load(self):
-        with open(self.filename) as strfile:
-            ystr = yaml.load(strfile, Loader=yaml.Loader)
-            self.structure = Structure()
-            self.structure.namespace = ystr['namespace']+'.' if 'namespace' in ystr else ''
-            self.loadtypes()
-            self.structure.module = self.loadpyfile(self.filename)
-            if self.structure.module != None:
-                self.structure.module.loadtypes(self)
-            for yrname, yrec in ystr['types'].items():
-                reader = PlainRecordReader.loadreader(yrname, yrec, self)
-                self.structure.records[reader.name] = reader
-                if self.structure.start == None:
-                    self.structure.start = reader
-        for xref in self.xrefs:
-            xref.resolve(self.structure.records)
-        return self.structure
-
-    def loadtypes(self):
-        streams.loadtypes(self)
+    def addtypes(self, readers):
+        for typename, loader in readers.items():
+            self.loader.structure.records[self.namespace + typename] = loader
 
     def getreader(self, stype, xref):
         if stype.find('[') >=0 :
             return self.getarrayreader(stype)
-        if stype in self.simple:
-            return self.simple[stype]
-        stype = self.structure.namespace + stype
-        if stype in self.structure.records:
-            return self.structure.records[stype](self)
-        xref.typename = stype
-        self.xrefs.append(xref)
+        if stype in self.loader.simple:
+            return self.loader.simple[stype]
+        fqtype = self.namespace + stype
+        if fqtype in self.loader.structure.records:
+            return self.loader.structure.records[fqtype](self.loader)
+        xref.typename = fqtype
+        xref.module = self
+        self.loader.xrefs.append(xref)
         return None
 
     def getarrayreader(self, stype):
@@ -273,16 +269,50 @@ class Loader:
         array.simple = self.getreader(simple, LoaderXRef(array, 'simple'))
         return array
 
-    def addtypes(self, readers):
-        for typename, loader in readers.items():
-            self.structure.records[self.structure.namespace + typename] = loader
+class Loader:
+    def __init__(self, formatter):
+        self.formatter = formatter
+        self.xrefs = []
+        self.simple = { 'uint8': IntReader(1), 'uint16': IntReader(2),
+            'uint32': IntReader(4), 'uint64': IntReader(8) }
+        self.structure = Structure()
+        self.modules = [ LoaderModule(self) ]
+        self.loadtypes( self.modules[-1] )
+
+    def load(self, filename):
+        self.loadfile(filename, True)
+        for xref in self.xrefs:
+            xref.resolve()
+        return self.structure
+
+    def loadfile(self, filename, toplevel):
+        with open(filename) as strfile:
+            ystr = yaml.load(strfile, Loader=yaml.Loader)
+            module = LoaderModule(self)
+            self.modules.append(module)
+            module.namespace = ystr['namespace']+'.' if 'namespace' in ystr else ''
+            module.module = self.loadpyfile(filename)
+            if module.module != None:
+                module.module.loadtypes(module)
+            if 'types' in ystr:
+                self.loadrecords(ystr, module, toplevel)
+
+    def loadrecords(self, ystr, module, toplevel):
+        for yrname, yrec in ystr['types'].items():
+            reader = PlainRecordReader.loadreader(yrname, yrec, module)
+            self.structure.records[reader.name] = reader.getreader
+            if toplevel and self.structure.start == None:
+                self.structure.start = reader
+
+    def loadtypes(self, module):
+        streams.loadtypes(module)
 
     def addreadxref(self, rx):
         self.structure.xrefs.append(rx)
 
     def loadpyfile(self, filename):
-        pyfile = os.path.splitext(self.filename)[0] + '.py'
-        pymodule = os.path.splitext(self.filename)[0].replace('/','.')
+        pyfile = os.path.splitext(filename)[0] + '.py'
+        pymodule = os.path.splitext(filename)[0].replace('/','.')
         if os.path.exists(pyfile):
             print(pyfile, 'loaded')
             return importlib.import_module(pymodule)
@@ -292,5 +322,5 @@ class Loader:
 
 
 def loadmeta(filename, formatter):
-    loader = Loader(filename, formatter)
-    return loader.load()
+    loader = Loader(formatter)
+    return loader.load(filename)

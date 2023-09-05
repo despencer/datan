@@ -61,9 +61,9 @@ class RecordStreamReader(StreamReader):
     def read(self, datafile):
         return RecordStream(self, self.record)
 
-    def loadmeta(self, loader, yfield):
-        self.record = loader.getreader(yfield['record'], records.LoaderXRef(self, 'record'))
-        self.recformatter = loader.formatter.get(yfield['record'])
+    def loadmeta(self, module, yfield):
+        self.record = module.getreader(yfield['record'], records.LoaderXRef(self, 'record'))
+        self.recformatter = module.loader.formatter.get(yfield['record'])
 
     def getformatter(self, loader):
         return loader.formatter.get('recordstream')
@@ -72,5 +72,5 @@ class RecordStreamReader(StreamReader):
         return self.formatter(data, record=self.recformatter)
 
 
-def loadtypes(loader):
-    loader.addtypes( { 'recordstream': RecordStreamReader.getreader } )
+def loadtypes(module):
+    module.addtypes( { 'recordstream': RecordStreamReader.getreader } )
