@@ -288,6 +288,8 @@ class Loader:
     def loadfile(self, filename, toplevel):
         with open(filename) as strfile:
             ystr = yaml.load(strfile, Loader=yaml.Loader)
+            if 'imports' in ystr:
+                self.loadimports(ystr, filename)
             module = LoaderModule(self)
             self.modules.append(module)
             module.namespace = ystr['namespace']+'.' if 'namespace' in ystr else ''
@@ -303,6 +305,15 @@ class Loader:
             self.structure.records[reader.name] = reader.getreader
             if toplevel and self.structure.start == None:
                 self.structure.start = reader
+
+    def loadimports(self, ystr, filename):
+        for yimport in ystr['imports']:
+            importfile = yimport + '.struct'
+            path = os.path.dirname(filename)
+            if path != '':
+                importfile = path + '/' + importfile
+            print('import', importfile)
+            self.loadfile(importfile, False)
 
     def loadtypes(self, module):
         streams.loadtypes(module)

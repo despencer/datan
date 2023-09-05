@@ -1,0 +1,10 @@
+namespace: ole
+version: 1
+imports:
+    - ole
+types:
+    excelfile:
+        - field: file
+          type: file
+
+
