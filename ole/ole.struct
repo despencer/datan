@@ -104,5 +104,5 @@ types:
         - field: padder
           type: free[4]
         - field: name
-          function: "rawname.decode('utf-16')[:namesize]"
+          function: "rawname[:namesize-2].decode('utf-16')"
 

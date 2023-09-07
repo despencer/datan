@@ -6,5 +6,19 @@ types:
     excelfile:
         - field: file
           type: file
+        - field: wbstreamstart
+          function: "file.dir.find(lambda x: x.name=='Workbook').start"
+        - field: wbstreamsize
+          function: "file.dir.find(lambda x: x.name=='Workbook').size"
+        - field: wbstream
+          type: datastream
+          params:
+            - name: header
+              reference: file.header
+            - name: fat
+              reference: file.fat
+            - name: start
+              reference: wbstreamstart
+
 
 

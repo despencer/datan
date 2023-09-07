@@ -57,6 +57,16 @@ class RecordStream:
     def reset(self):
         pass
 
+    def find(self, condition):
+        self.seek(0)
+        while True:
+            acc = self.read(1)
+            if len(acc) == 0:
+                break
+            if condition(acc[0]):
+                return acc[0]
+        return None
+
 class RecordStreamReader(StreamReader):
     def read(self, datafile):
         return RecordStream(self, self.record)

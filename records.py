@@ -70,7 +70,7 @@ class PlainRecordReader:
             field.name = yfield['field']
             if 'function' in yfield:
                 field.reader = FunctionReader(yfield['function'])
-                field.preread.append( lambda context: field.reader.setcontext(context) )
+                field.preread.append( field.reader.setcontext )
                 field.formatter = str
             else:
                 field.reader = module.getreader(yfield['type'], LoaderXRef(field, 'reader', meta=yfield))
