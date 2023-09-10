@@ -9,6 +9,7 @@ class SectorChainStream:
         self.datafile = datafile
         self.sectors = None
         self.pos = 0
+        self.size = None
 
     def seek(self, delta, postype=os.SEEK_SET):
         if postype == os.SEEK_END:
@@ -26,8 +27,12 @@ class SectorChainStream:
         isect = self.pos // self.posbase
         istart = (self.pos % self.posbase)
         while size >= 0:
-            self.datafile.seek(self.sectors[isect] + istart)
             chunk = min(size, self.posbase-istart)
+            if self.size != None:
+                chunk = min(chunk, self.size-self.pos)
+                if chunk <= 0:
+                    break
+            self.datafile.seek(self.sectors[isect] + istart)
             acc += self.datafile.read(chunk)
             self.pos += chunk
             size -= chunk
@@ -56,14 +61,19 @@ class SectorChainStream:
     def checkpos(self):
         if self.pos is None:
             self.acquiresectors(-1)
-            self.pos = len(self.sectors) * self.posbase
+            self.pos = self.getmax()
         else:
-            if self.pos >= ( len(self.sectors) * self.posbase ):
+            if self.pos >= self.getmax():
                 self.acquiresectors(-1)
-            if self.pos > ( len(self.sectors) * self.posbase ):
-                self.pos = len(self.sectors) * self.posbase
+            if self.pos > self.getmax():
+                self.pos = self.getmax()
         if self.pos < 0:
             self.pos = 0
+
+    def getmax(self):
+        if self.size is None:
+            return len(self.sectors) * self.posbase
+        return self.size
 
     def sectorpos(self, isect):
             return (isect+1)*self.sectsize

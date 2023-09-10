@@ -19,6 +19,8 @@ types:
               reference: file.fat
             - name: start
               reference: wbstreamstart
+            - name: size
+              reference: wbstreamsize
 
 
 
