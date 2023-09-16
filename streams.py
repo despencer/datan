@@ -67,10 +67,7 @@ class RecordStream:
                 return acc[0]
         return None
 
-class RecordStreamReader(StreamReader):
-    def read(self, datafile):
-        return RecordStream(self, self.record)
-
+class StructuredStreamReader(StreamReader):
     def loadmeta(self, module, yfield):
         self.record = module.getreader(yfield['record'], records.LoaderXRef(self, 'record'))
         self.recformatter = module.loader.formatter.get(yfield['record'])
@@ -80,6 +77,12 @@ class RecordStreamReader(StreamReader):
 
     def prettyprint(self, data):
         return self.formatter(data, record=self.recformatter)
+
+
+class RecordStreamReader(StructuredStreamReader):
+    def read(self, datafile):
+        return RecordStream(self, self.record)
+
 
 class SerialStream:
     def __init__(self, meta):
@@ -154,5 +157,10 @@ class SerialStream:
         if self.source.getpos() == self.sourcesize:
             self.size = self.sourcesize
 
+class SerialStreamReader(StructuredStreamReader):
+    def read(self, datafile):
+        return SerialStream(self, self.record)
+
+
 def loadtypes(module):
-    module.addtypes( { 'recordstream': RecordStreamReader.getreader } )
+    module.addtypes( { 'recordstream': RecordStreamReader.getreader, 'serialstream': SerialStreamReader.getreader } )
