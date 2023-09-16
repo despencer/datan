@@ -10,7 +10,7 @@ types:
           function: "file.dir.find(lambda x: x.name=='Workbook').start"
         - field: wbstreamsize
           function: "file.dir.find(lambda x: x.name=='Workbook').size"
-        - field: wbstream
+        - field: wbrawstream
           type: datastream
           params:
             - name: header
@@ -21,6 +21,19 @@ types:
               reference: wbstreamstart
             - name: size
               reference: wbstreamsize
+        - field: wbstream
+          type: serialstream
+          params:
+            - name: source
+              reference: wbrawstream
+          record: biff8
+
+    biff8:
+        - type: varrecord
+        - field: type
+          type: uint16
+        - field: size
+          type: uint16
 
 
 

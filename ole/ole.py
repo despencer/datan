@@ -43,10 +43,13 @@ class SectorChainStream:
         return acc
 
     def __len__(self):
-        pos = self.pos
-        len = self.seek(0, os.SEEK_END)
-        self.pos = pos
-        return len
+        if self.size is None:
+            pos = self.pos
+            len = self.seek(0, os.SEEK_END)
+            self.pos = pos
+            return len
+        else:
+            return self.size
 
     def __repr__(self):
         return self._meta.prettyprint(self)
