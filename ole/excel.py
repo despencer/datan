@@ -20,3 +20,12 @@ class Biff8RecordReader:
         size = int.from_bytes(header[2:4], 'little')
         datafile.seek(size, os.SEEK_CUR)
         return size
+
+    @classmethod
+    def getreader(cls, loader):
+        reader = cls()
+        return reader
+
+
+def loadtypes(loader):
+    loader.addtypes( { 'biff8': Biff8RecordReader.getreader } )

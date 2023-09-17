@@ -27,13 +27,3 @@ types:
             - name: source
               reference: wbrawstream
           record: biff8
-
-    biff8:
-        - class: varrecord
-        - field: type
-          type: uint16
-        - field: size
-          type: uint16
-
-
-

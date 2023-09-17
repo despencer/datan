@@ -85,8 +85,9 @@ class RecordStreamReader(StructuredStreamReader):
 
 
 class SerialStream:
-    def __init__(self, meta):
+    def __init__(self, meta, record):
         self._meta = meta
+        self.record = record
         self.pos = 0
         self.size = None
         self.index = []
@@ -138,7 +139,7 @@ class SerialStream:
                     return
                 self.syncroll()
 
-    def syncat(self)
+    def syncat(self):
         ''' Tries to synchronize either at last chunk observed or at the closest chunk '''
         pind = min( self.pos // self.step , len(self.index)-1 )
         self.pos = pind * self.step
