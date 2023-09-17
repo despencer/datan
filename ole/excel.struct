@@ -29,7 +29,7 @@ types:
           record: biff8
 
     biff8:
-        - type: varrecord
+        - class: varrecord
         - field: type
           type: uint16
         - field: size
