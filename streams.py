@@ -120,6 +120,9 @@ class SerialStream:
             size -= 1
         return acc
 
+    def __repr__(self):
+        return self._meta.prettyprint(self)
+
     def reset(self):
         self.pos = 0
         self.size = None
@@ -139,7 +142,7 @@ class SerialStream:
                     return
                 self.syncroll()
 
-    def syncat(self):
+    def syncatpos(self):
         ''' Tries to synchronize either at last chunk observed or at the closest chunk '''
         pind = min( self.pos // self.step , len(self.index)-1 )
         self.pos = pind * self.step

@@ -21,6 +21,9 @@ class SectorChainStream:
         self.checkpos()
         return self.pos
 
+    def getpos(self):
+        return self.pos
+
     def read(self, size):
         acc = bytes()
         self.acquiresectors(self.pos+size)
