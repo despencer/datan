@@ -4,11 +4,17 @@ class Biff8Record:
     def __init__(self, rectype, size):
         self.rectype = rectype
         self.size = size
+        self.record = None
 
     def __repr__(self):
-        return "BIFF8 {:04X} of size {:04X}".format(self.rectype, self.size)
+        if self.record == None:
+            return "BIFF8 {:04X} of size {:04X}".format(self.rectype, self.size)
+        return str(self.record)
 
 class Biff8RecordReader:
+    def loadmeta(self, module, yfield):
+        self.mapping = module.gettypemapper('biff8')
+
     def read(self, datafile):
         header = datafile.read(4)
         record = Biff8Record(int.from_bytes(header[0:2], 'little'), int.from_bytes(header[2:4], 'little') )

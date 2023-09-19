@@ -296,11 +296,11 @@ class Loader:
             module.module = self.loadpyfile(filename)
             if module.module != None:
                 module.module.loadtypes(module)
-            if 'types' in ystr:
+            if 'records' in ystr:
                 self.loadrecords(ystr, module, toplevel)
 
     def loadrecords(self, ystr, module, toplevel):
-        for yrname, yrec in ystr['types'].items():
+        for yrname, yrec in ystr['records'].items():
             reader = PlainRecordReader.loadreader(yrname, yrec, module)
             self.structure.records[reader.name] = reader.getreader
             if toplevel and self.structure.start == None:

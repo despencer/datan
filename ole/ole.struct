@@ -1,6 +1,6 @@
 namespace: ole
 version: 1
-types:
+records:
     file:
         - field: header
           type: header
