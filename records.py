@@ -212,6 +212,15 @@ class ReaderXRef:
     def __len__(self):
         return len(self.params)
 
+class TypeMapperItem:
+    pass
+
+class TypeMapper:
+    def __init__(self):
+        self.mapper = {}
+
+    def add(key, item):
+        self.mapper[key] = item
 
 class IntReader:
     def __init__(self, size):
@@ -237,9 +246,10 @@ class FunctionReader:
         return 0
 
 class LoaderModule:
-    def __init__(self, loader):
+    def __init__(self, loader, ymeta):
         self.loader = loader
-        self.namespace = ''
+        self.ymeta = ymeta
+        self.namespace = self.ymeta['namespace']+'.' if 'namespace' in self.ymeta else ''
 
     def addtypes(self, readers):
         for typename, loader in readers.items():
@@ -269,6 +279,14 @@ class LoaderModule:
         array.simple = self.getreader(simple, LoaderXRef(array, 'simple'))
         return array
 
+    def gettypemapper(self, name):
+        mapper = TypeMapper()
+        for ykey, yreader in self.ymeta['mappings']['name']:
+            item = TypeMapperItem()
+            item.reader = self.getreader(simple, LoaderXRef(item, 'reader'))
+            mapper.add(ykey, item)
+        return mapper
+
 class Loader:
     def __init__(self, formatter):
         self.formatter = formatter
@@ -276,7 +294,7 @@ class Loader:
         self.simple = { 'uint8': IntReader(1), 'uint16': IntReader(2),
             'uint32': IntReader(4), 'uint64': IntReader(8) }
         self.structure = Structure()
-        self.modules = [ LoaderModule(self) ]
+        self.modules = [ LoaderModule(self, {}) ]
         self.loadtypes( self.modules[-1] )
 
     def load(self, filename):
@@ -290,9 +308,8 @@ class Loader:
             ystr = yaml.load(strfile, Loader=yaml.Loader)
             if 'imports' in ystr:
                 self.loadimports(ystr, filename)
-            module = LoaderModule(self)
+            module = LoaderModule(self, ystr)
             self.modules.append(module)
-            module.namespace = ystr['namespace']+'.' if 'namespace' in ystr else ''
             module.module = self.loadpyfile(filename)
             if module.module != None:
                 module.module.loadtypes(module)
