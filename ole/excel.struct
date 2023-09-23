@@ -28,6 +28,24 @@ records:
               reference: wbrawstream
           record: biff8
 
+# 0x05C:
+    writeaccess:
+        - field: username
+          type: bytes[112]
+
+# 0x0C1
+    mms:
+        - field: reserved
+          type: free[2]
+
+# 0x0E1
+    interfacehdr:
+        - field: codepage
+          type: uint16
+
+# 0x0E2
+    interfaceend: []
+
 # 0x0809
     bof:
         - field: vers
@@ -39,4 +57,8 @@ records:
 
 mappings:
     biff8:
+        0x005C: writeaccess
+        0x00C1: mms
+        0x00E1: interfacehdr
+        0x00E2: interfaceend
         0x0809: bof
