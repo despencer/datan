@@ -207,7 +207,6 @@ class SerialStreamReader(StructuredStreamReader):
     def read(self, datafile):
         return SerialStream(self, self.record)
 
-
-def loadtypes(module):
+def loadmeta(module):
     module.addtypes( { 'bytestream': ByteStreamReader.getreader, 'recordstream': RecordStreamReader.getreader,
                        'serialstream': SerialStreamReader.getreader } )

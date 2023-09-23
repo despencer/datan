@@ -36,6 +36,11 @@ class Biff8RecordReader:
         reader.mapping = module.gettypemapper('biff8')
         return reader
 
+def msunicode(rawdata):
+    method = 'ascii' if (rawdata[2] & 0x80) == 0 else 'utf-16'
+    size = int.from_bytes(rawdata[0:2], 'little')
+    return rawdata[3:3+size].decode(method)
 
-def loadtypes(module):
+def loadmeta(module):
     module.addtypes( { 'biff8': Biff8RecordReader.getreader } )
+    module.addfunctions( {'msunicode': msunicode } )

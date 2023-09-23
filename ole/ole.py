@@ -247,6 +247,6 @@ class FatSectorStreamReader(streams.StreamReader):
     def read(self, datafile):
         return FatSectorStream(self, self.inheader.read(datafile), self.chain.read(datafile) )
 
-def loadtypes(loader):
-    loader.addtypes( { 'sectorchain': SectorChainStreamReader.getreader, 'difatstream': FatSectorStreamReader.getreader,
+def loadmeta(module):
+    module.addtypes( { 'sectorchain': SectorChainStreamReader.getreader, 'difatstream': FatSectorStreamReader.getreader,
                        'fatstream': FatStreamReader.getreader, 'datastream': DataStreamReader.getreader } )

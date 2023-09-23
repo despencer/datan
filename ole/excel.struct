@@ -30,8 +30,10 @@ records:
 
 # 0x05C:
     writeaccess:
-        - field: username
+        - field: usernameraw
           type: bytes[112]
+        - field: username
+          function: "ole_msunicode(usernameraw)"
 
 # 0x0C1
     mms:

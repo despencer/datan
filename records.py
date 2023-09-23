@@ -69,7 +69,7 @@ class PlainRecordReader:
             field = FieldReader()
             field.name = yfield['field']
             if 'function' in yfield:
-                field.reader = FunctionReader(yfield['function'])
+                field.reader = FunctionReader(yfield['function'], module.getfunctions())
                 field.preread.append( field.reader.setcontext )
                 field.formatter = str
             else:
@@ -134,6 +134,7 @@ class ArrayReader:
 class Structure:
     def __init__(self):
         self.records = {}
+        self.functions = {}
         self.start = None
         self.module = None
         self.xrefs = []
@@ -239,14 +240,16 @@ class IntReader:
         return self.size
 
 class FunctionReader:
-    def __init__(self, func):
+    def __init__(self, func, statctx):
         self.func = func
+        self.statctx = statctx
 
     def setcontext(self, instance):
         self.context = instance.getfields()
+#        self.context['msunicode'] = msunicode
 
     def read(self, datafile):
-        return eval(self.func, self.context)
+        return eval(self.func, self.context, self.statctx)
 
     def getsize(self):
         return 0
@@ -268,6 +271,10 @@ class LoaderModule:
     def addtypes(self, readers):
         for typename, reader in readers.items():
             self.loader.structure.records[self.namespace + typename] = TypeLoader(reader, self)
+
+    def addfunctions(self, funcs):
+        for funcname, func in funcs.items():
+            self.loader.structure.functions[(self.namespace + funcname).replace('.','_')] = func
 
     def getreader(self, stype, xref):
         if stype.find('[') >=0 :
@@ -304,6 +311,9 @@ class LoaderModule:
     def getformatter(self, name):
         return self.loader.formatter.get(name)
 
+    def getfunctions(self):
+        return self.loader.structure.functions
+
 class Loader:
     def __init__(self, formatter):
         self.formatter = formatter
@@ -329,7 +339,7 @@ class Loader:
             self.modules.append(module)
             module.module = self.loadpyfile(filename)
             if module.module != None:
-                module.module.loadtypes(module)
+                module.module.loadmeta(module)
             if 'records' in ystr:
                 self.loadrecords(ystr, module, toplevel)
 
@@ -350,7 +360,7 @@ class Loader:
             self.loadfile(importfile, False)
 
     def loadtypes(self, module):
-        streams.loadtypes(module)
+        streams.loadmeta(module)
 
     def addreadxref(self, rx):
         self.structure.xrefs.append(rx)
