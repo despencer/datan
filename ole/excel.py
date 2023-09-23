@@ -1,4 +1,5 @@
 import os
+import streams
 
 class Biff8Record:
     def __init__(self, rectype, size):
@@ -12,13 +13,15 @@ class Biff8Record:
         return str(self.record)
 
 class Biff8RecordReader:
-    def loadmeta(self, module, yfield):
-        self.mapping = module.gettypemapper('biff8')
+    def __init__(self):
+        self.bytereader = streams.ByteStreamReader()
 
     def read(self, datafile):
         header = datafile.read(4)
         record = Biff8Record(int.from_bytes(header[0:2], 'little'), int.from_bytes(header[2:4], 'little') )
         record.raw = datafile.read(record.size)
+        if record.rectype in self.mapping:
+            record.record = self.mapping[record.rectype].read(self.bytereader.from_bytes(record.raw))
         return record
 
     def readsize(self, datafile):
@@ -28,10 +31,11 @@ class Biff8RecordReader:
         return size
 
     @classmethod
-    def getreader(cls, loader):
+    def getreader(cls, module):
         reader = cls()
+        reader.mapping = module.gettypemapper('biff8')
         return reader
 
 
-def loadtypes(loader):
-    loader.addtypes( { 'biff8': Biff8RecordReader.getreader } )
+def loadtypes(module):
+    module.addtypes( { 'biff8': Biff8RecordReader.getreader } )

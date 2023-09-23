@@ -166,7 +166,7 @@ class LoaderXRef:
                     resolved = records[typename]
         if resolved is None:
             raise Exception('Type ' + self.typename + ' not found')
-        reader = resolved(self.module.loader)
+        reader = resolved.getreader()
         if self.meta is not None and hasattr(reader, 'loadmeta'):
             reader.loadmeta(self.module, self.meta)
         setattr(self.field, self.reader, reader )
@@ -219,8 +219,14 @@ class TypeMapper:
     def __init__(self):
         self.mapper = {}
 
-    def add(key, item):
+    def add(self, key, item):
         self.mapper[key] = item
+
+    def __getitem__(self, key):
+        return self.mapper[key].reader
+
+    def __contains__(self, key):
+        return key in self.mapper
 
 class IntReader:
     def __init__(self, size):
@@ -245,6 +251,14 @@ class FunctionReader:
     def getsize(self):
         return 0
 
+class TypeLoader:
+    def __init__(self, readermaker, module):
+        self.readermaker = readermaker
+        self.module = module
+
+    def getreader(self):
+        return self.readermaker(self.module)
+
 class LoaderModule:
     def __init__(self, loader, ymeta):
         self.loader = loader
@@ -252,8 +266,8 @@ class LoaderModule:
         self.namespace = self.ymeta['namespace']+'.' if 'namespace' in self.ymeta else ''
 
     def addtypes(self, readers):
-        for typename, loader in readers.items():
-            self.loader.structure.records[self.namespace + typename] = loader
+        for typename, reader in readers.items():
+            self.loader.structure.records[self.namespace + typename] = TypeLoader(reader, self)
 
     def getreader(self, stype, xref):
         if stype.find('[') >=0 :
@@ -262,7 +276,7 @@ class LoaderModule:
             return self.loader.simple[stype]
         fqtype = self.namespace + stype
         if fqtype in self.loader.structure.records:
-            return self.loader.structure.records[fqtype](self.loader)
+            return self.loader.structure.records[fqtype].getreader()
         xref.typename = fqtype
         xref.module = self
         self.loader.xrefs.append(xref)
@@ -281,11 +295,14 @@ class LoaderModule:
 
     def gettypemapper(self, name):
         mapper = TypeMapper()
-        for ykey, yreader in self.ymeta['mappings']['name']:
+        for ykey, yreader in self.ymeta['mappings'][name].items():
             item = TypeMapperItem()
-            item.reader = self.getreader(simple, LoaderXRef(item, 'reader'))
+            item.reader = self.getreader(yreader, LoaderXRef(item, 'reader'))
             mapper.add(ykey, item)
         return mapper
+
+    def getformatter(self, name):
+        return self.loader.formatter.get(name)
 
 class Loader:
     def __init__(self, formatter):
@@ -319,7 +336,7 @@ class Loader:
     def loadrecords(self, ystr, module, toplevel):
         for yrname, yrec in ystr['records'].items():
             reader = PlainRecordReader.loadreader(yrname, yrec, module)
-            self.structure.records[reader.name] = reader.getreader
+            self.structure.records[reader.name] = TypeLoader(reader.getreader, module)
             if toplevel and self.structure.start == None:
                 self.structure.start = reader
 

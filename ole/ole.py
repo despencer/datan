@@ -178,43 +178,6 @@ class DataStreamReader(streams.StreamReader):
     def read(self, datafile):
         return DataStream(self, datafile)
 
-class ByteStream:
-    def __init__(self, meta):
-        self._meta = meta
-        self.pos = 0
-
-    def seek(self, delta, postype=os.SEEK_SET):
-        if postype == os.SEEK_END:
-            self.pos = len(self.source)
-        elif postype == os.SEEK_CUR:
-            self.pos = self.pos + delta
-        else:
-            self.pos = delta
-        self.checkpos()
-        return self.pos
-
-    def read(self, size):
-        acc = self.source[self.pos:self.pos+size]
-        self.pos += len(acc)
-        self.checkpos()
-        return acc
-
-    def checkpos(self):
-        if self.pos > len(self.source):
-            self.pos = len(self.source)
-        if self.pos < 0:
-            self.pos = 0
-
-    def __repr__(self):
-        return self._meta.prettyprint(self)
-
-    def reset(self):
-        pass
-
-class ByteStreamReader(streams.StreamReader):
-    def read(self, datafile):
-        return ByteStream(self)
-
 class CombinedStream:
     def __init__(self, meta):
         self._meta = meta
@@ -278,13 +241,12 @@ class FatSectorStream(CombinedStream):
 
 class FatSectorStreamReader(streams.StreamReader):
     def __init__(self):
-        self.inheader = ByteStreamReader()
+        self.inheader = streams.ByteStreamReader()
         self.chain = DIFatSectorChainStreamReader()
 
     def read(self, datafile):
         return FatSectorStream(self, self.inheader.read(datafile), self.chain.read(datafile) )
 
 def loadtypes(loader):
-    loader.addtypes( { 'sectorchain': SectorChainStreamReader.getreader, 'bytestream': ByteStreamReader.getreader,
-                       'difatstream': FatSectorStreamReader.getreader, 'fatstream': FatStreamReader.getreader,
-                       'datastream': DataStreamReader.getreader } )
+    loader.addtypes( { 'sectorchain': SectorChainStreamReader.getreader, 'difatstream': FatSectorStreamReader.getreader,
+                       'fatstream': FatStreamReader.getreader, 'datastream': DataStreamReader.getreader } )

@@ -49,7 +49,7 @@ class RecordStreamFormatter:
         if record is None:
             record = str
         for i in range( min(self.size,len(data)) ):
-            ret += '{:08X}\n'.format(self.pos+i) + indent(record(data[i])) + '\n'
+            ret += '{:08X}'.format(self.pos+i) + indent(record(data[i])) + '\n'
         return ret
 
 def arrayformatter(a, base):

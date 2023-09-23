@@ -28,10 +28,6 @@ records:
               reference: wbrawstream
           record: biff8
 
-mappings:
-    biff8:
-        0x0809: bof
-
 # 0x0809
     bof:
         - field: vers
@@ -40,3 +36,7 @@ mappings:
           type: uint16
         - field: padder
           type: free[12]
+
+mappings:
+    biff8:
+        0x0809: bof

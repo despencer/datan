@@ -13,7 +13,49 @@ class StreamReader():
         return reader
 
     def getformatter(self, loader):
-        return loader.formatter.get('stream')
+        return loader.getformatter('stream')
+
+class ByteStream:
+    def __init__(self, meta):
+        self._meta = meta
+        self.pos = 0
+
+    def seek(self, delta, postype=os.SEEK_SET):
+        if postype == os.SEEK_END:
+            self.pos = len(self.source)
+        elif postype == os.SEEK_CUR:
+            self.pos = self.pos + delta
+        else:
+            self.pos = delta
+        self.checkpos()
+        return self.pos
+
+    def read(self, size):
+        acc = self.source[self.pos:self.pos+size]
+        self.pos += len(acc)
+        self.checkpos()
+        return acc
+
+    def checkpos(self):
+        if self.pos > len(self.source):
+            self.pos = len(self.source)
+        if self.pos < 0:
+            self.pos = 0
+
+    def __repr__(self):
+        return self._meta.prettyprint(self)
+
+    def reset(self):
+        pass
+
+class ByteStreamReader(StreamReader):
+    def read(self, datafile):
+        return ByteStream(self)
+
+    def from_bytes(self, rawdata):
+        stream = ByteStream(self)
+        stream.source = rawdata
+        return stream
 
 class RecordStream:
     def __init__(self, meta, record):
@@ -73,7 +115,7 @@ class StructuredStreamReader(StreamReader):
         self.recformatter = module.loader.formatter.get(yfield['record'])
 
     def getformatter(self, loader):
-        return loader.formatter.get('recordstream')
+        return loader.getformatter('recordstream')
 
     def prettyprint(self, data):
         return self.formatter(data, record=self.recformatter)
@@ -167,4 +209,5 @@ class SerialStreamReader(StructuredStreamReader):
 
 
 def loadtypes(module):
-    module.addtypes( { 'recordstream': RecordStreamReader.getreader, 'serialstream': SerialStreamReader.getreader } )
+    module.addtypes( { 'bytestream': ByteStreamReader.getreader, 'recordstream': RecordStreamReader.getreader,
+                       'serialstream': SerialStreamReader.getreader } )
