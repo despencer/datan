@@ -36,11 +36,17 @@ class ByteStream:
         self.checkpos()
         return acc
 
+    def __len__(self):
+        return len(self.source)
+
     def checkpos(self):
         if self.pos > len(self.source):
             self.pos = len(self.source)
         if self.pos < 0:
             self.pos = 0
+
+    def getpos(self):
+        return self.pos
 
     def __repr__(self):
         return self._meta.prettyprint(self)

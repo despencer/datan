@@ -246,13 +246,24 @@ class FunctionReader:
 
     def setcontext(self, instance):
         self.context = instance.getfields()
-#        self.context['msunicode'] = msunicode
 
     def read(self, datafile):
         return eval(self.func, self.context, self.statctx)
 
     def getsize(self):
         return 0
+
+class FillReader:
+    def __init__(self, module):
+        self.bytemeta = streams.ByteStreamReader()
+        self.bytemeta.formatter = module.getformatter('stream')
+
+    def read(self, datafile):
+        return self.bytemeta.from_bytes( datafile.read(len(datafile) - datafile.getpos()) )
+
+    @classmethod
+    def getreader(cls, module):
+        return cls(module)
 
 class TypeLoader:
     def __init__(self, readermaker, module):
@@ -360,6 +371,7 @@ class Loader:
             self.loadfile(importfile, False)
 
     def loadtypes(self, module):
+        module.addtypes( { 'filler': FillReader.getreader } )
         streams.loadmeta(module)
 
     def addreadxref(self, rx):
