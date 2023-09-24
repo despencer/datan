@@ -28,6 +28,21 @@ records:
               reference: wbrawstream
           record: biff8
 
+# 0x012:
+    protect:
+        - field: lock
+          type: uint16
+
+# 0x013:
+    password:
+        - field: password
+          type: uint16
+
+# 0x019:
+    winprotect:
+        - field: lock
+          type: uint16
+
 # 0x042:
     codepage:
         - field: pagenum
@@ -39,6 +54,10 @@ records:
           type: bytes[112]
         - field: username
           function: "ole_msunicode(usernameraw)"
+# 0x09C
+    builtinfngroupcount:
+        - field: count
+          type: uint16
 
 # 0x0C1
     mms:
@@ -69,6 +88,11 @@ records:
         - field: reserved
           type: free[2]
 
+# 0x01AF:
+    prot4rev:
+        - field: revlock
+          type: uint16
+
 # 0x1C0
     excel9file: []
 
@@ -83,12 +107,17 @@ records:
 
 mappings:
     biff8:
+        0x0012: protect
+        0x0013: password
+        0x0019: winprotect
         0x0042: codepage
         0x005C: writeaccess
+        0x009C: builtinfngroupcount
         0x00C1: mms
         0x00E1: interfacehdr
         0x00E2: interfaceend
         0x013D: rrtabid
         0x0161: dsf
+        0x01AF: prot4rev
         0x01C0: excel9file
         0x0809: bof
