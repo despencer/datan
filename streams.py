@@ -54,6 +54,9 @@ class ByteStream:
     def reset(self):
         pass
 
+    def readall(self):
+        return self.source
+
 class ByteStreamReader(StreamReader):
     def read(self, datafile):
         return ByteStream(self)

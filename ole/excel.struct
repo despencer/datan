@@ -28,6 +28,11 @@ records:
               reference: wbrawstream
           record: biff8
 
+# 0x0E:
+    calcrefmode:
+        - field: isrefa1
+          type: uint16
+
 # 0x012:
     protect:
         - field: lock
@@ -43,6 +48,48 @@ records:
         - field: lock
           type: uint16
 
+# 0x022:
+    date1904:
+        - field: is1904
+          type: uint16
+
+# 0x031:
+    font:
+        - field: height
+          type: uint16
+        - field: mods
+          type: uint16
+        - field: color
+          type: uint16
+        - field: weight
+          type: uint16
+        - field: scripts
+          type: uint16
+        - field: underline
+          type: uint8
+        - field: family
+          type: uint8
+        - field: charset
+          type: uint16
+        - field: rawfontname
+          type: filler
+        - field: fontname
+          function: "ole_shortmsunicode(rawfontname.readall())"
+
+# 0x03D:
+    window1:
+        - field: xwn
+          type: uint16
+        - field: ywn
+          type: uint16
+        - field: dxwn
+          type: uint16
+        - field: dywn
+          type: uint16
+        - field: padder
+          type: free[10]
+
+
 # 0x042:
     codepage:
         - field: pagenum
@@ -53,7 +100,7 @@ records:
         - field: usernameraw
           type: bytes[112]
         - field: username
-          function: "ole_msunicode(usernameraw)"
+          function: "ole_longmsunicode(usernameraw)"
 # 0x09C
     builtinfngroupcount:
         - field: count
@@ -107,9 +154,13 @@ records:
 
 mappings:
     biff8:
+        0x000E: calcrefmode
         0x0012: protect
         0x0013: password
         0x0019: winprotect
+        0x0022: date1904
+        0x0031: font
+        0x003D: window1
         0x0042: codepage
         0x005C: writeaccess
         0x009C: builtinfngroupcount
