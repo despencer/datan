@@ -17,6 +17,10 @@ class Formatter:
     def streamformatter(self, stream):
         return 'A stream'
 
+    def extend(self, formatters):
+        for n,f in formatters.items():
+            self.formatters[n] = f
+
 class StreamFormatter:
     def __init__(self):
         self.pos = 0

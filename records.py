@@ -287,6 +287,9 @@ class LoaderModule:
         for funcname, func in funcs.items():
             self.loader.structure.functions[(self.namespace + funcname).replace('.','_')] = func
 
+    def addformatters(self, formatters):
+        self.loader.formatter.extend(formatters)
+
     def getreader(self, stype, xref):
         if stype.find('[') >=0 :
             return self.getarrayreader(stype)
