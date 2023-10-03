@@ -19,6 +19,7 @@ def dump(args):
     makeformat(fmt, args, strdef)
     with open(args.filename, 'rb') as datafile:
         obj = strdef.read(datafile)
+        fmt.apply(obj)
         if len(args.object) > 0:
             print(eval(args.object, obj.getfields()))
         else:

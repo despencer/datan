@@ -38,7 +38,14 @@ class Biff8RecordReader:
         return reader
 
 class Biff8StreamFormatter(formatter.StreamFormatter):
-    pass
+    def format(self, datafile, record=None):
+        ret = ''
+        datafile.seek(self.pos)
+        data = datafile.read(self.size)
+        for i in range( min(self.size,len(data)) ):
+            ret += '{0:08X} {1:08X}\n'.format(self.pos+i, data[i].rectype)
+        return ret
+
 
 def longmsunicode(rawdata):
     method = 'ascii' if (rawdata[2] & 0x80) == 0 else 'utf-16'
@@ -56,5 +63,5 @@ def loadmeta(module):
     module.addtypes( { 'biff8': Biff8RecordReader.getreader } )
     module.addfunctions( {'longmsunicode': longmsunicode, 'shortmsunicode': shortmsunicode } )
 
-def loadformatters(fmt):
+def loadformatters(fmt, yoptions):
     fmt.addformatters( {'wbstream': Biff8StreamFormatter() } )

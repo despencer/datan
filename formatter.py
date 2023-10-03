@@ -1,3 +1,4 @@
+import yaml
 import records
 
 class Formatter:
@@ -6,6 +7,7 @@ class Formatter:
         self.formatters = {}
         self.rules = []
         self.parameters = {}
+        self.overrides = {}
 
     def get(self, typename):
         if typename in self.formatters:
@@ -19,8 +21,24 @@ class Formatter:
     def streamformatter(self, stream):
         return 'A stream'
 
+    def addformatters(self, formatters):
+        for name, formatter in formatters.items():
+            self.formatters[name] = formatter.format
+
     def load(self, filename, strdef):
-        records.loadpyfile(strdef, filename)
+        with open(filename) as fmtfile:
+            yfmt = yaml.load(fmtfile, Loader=yaml.Loader)
+            pyfile = records.loadpyfile(strdef, filename)
+            if pyfile != None and 'options' in yfmt:
+                pyfile.loadformatters(self, yfmt['options'])
+            if 'formatters' in yfmt:
+                for yobject, yformatter in yfmt['formatters'].items():
+                    self.overrides[yobject] = self.formatters[yformatter]
+
+    def apply(self, data):
+        context = data.getfields()
+        for oref, formatter in self.overrides.items():
+            eval(oref, context)._meta.formatter = formatter
 
 class StreamFormatter:
     def __init__(self):

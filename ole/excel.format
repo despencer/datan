@@ -1,5 +1,5 @@
 formatters:
-    - wbstream: wbstream
+    wbstream: wbstream
 options:
     lookups:
         wbtypes:
