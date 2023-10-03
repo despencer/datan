@@ -1,3 +1,5 @@
+import records
+
 class Formatter:
     def __init__(self):
         self.default = lambda x: ""
@@ -17,9 +19,8 @@ class Formatter:
     def streamformatter(self, stream):
         return 'A stream'
 
-    def extend(self, formatters):
-        for n,f in formatters.items():
-            self.formatters[n] = f
+    def load(self, filename, strdef):
+        records.loadpyfile(strdef, filename)
 
 class StreamFormatter:
     def __init__(self):

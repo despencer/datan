@@ -136,7 +136,7 @@ class Structure:
         self.records = {}
         self.functions = {}
         self.start = None
-        self.module = None
+        self.pymodules = {}
         self.xrefs = []
 
     def read(self, datafile):
@@ -287,9 +287,6 @@ class LoaderModule:
         for funcname, func in funcs.items():
             self.loader.structure.functions[(self.namespace + funcname).replace('.','_')] = func
 
-    def addformatters(self, formatters):
-        self.loader.formatter.extend(formatters)
-
     def getreader(self, stype, xref):
         if stype.find('[') >=0 :
             return self.getarrayreader(stype)
@@ -351,7 +348,7 @@ class Loader:
                 self.loadimports(ystr, filename)
             module = LoaderModule(self, ystr)
             self.modules.append(module)
-            module.module = self.loadpyfile(filename)
+            module.module = loadpyfile(self.structure, filename)
             if module.module != None:
                 module.module.loadmeta(module)
             if 'records' in ystr:
@@ -380,16 +377,19 @@ class Loader:
     def addreadxref(self, rx):
         self.structure.xrefs.append(rx)
 
-    def loadpyfile(self, filename):
-        pyfile = os.path.splitext(filename)[0] + '.py'
-        pymodule = os.path.splitext(filename)[0].replace('/','.')
-        if os.path.exists(pyfile):
-            print(pyfile, 'loaded')
-            return importlib.import_module(pymodule)
+def loadpyfile(structure, filename):
+    pyfile = os.path.splitext(filename)[0] + '.py'
+    pymodule = os.path.splitext(filename)[0].replace('/','.')
+    if os.path.exists(pyfile):
+        if pyfile in structure.pymodules:
+            print(pyfile, 'already loaded')
         else:
-            print(pyfile, 'is not exist, skipped')
-            return None
-
+            print(pyfile, 'loaded')
+            structure.pymodules[pyfile] = importlib.import_module(pymodule)
+        return structure.pymodules[pyfile]
+    else:
+        print(pyfile, 'is not exist, skipped')
+        return None
 
 def loadmeta(filename, formatter):
     loader = Loader(formatter)

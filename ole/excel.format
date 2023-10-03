@@ -1,2 +1,23 @@
 formatters:
     - wbstream: wbstream
+options:
+    lookups:
+        wbtypes:
+            0x000E: calcrefmode
+            0x0012: protect
+            0x0013: password
+            0x0019: winprotect
+            0x0022: date1904
+            0x0031: font
+            0x003D: window1
+            0x0042: codepage
+            0x005C: writeaccess
+            0x009C: builtinfngroupcount
+            0x00C1: mms
+            0x00E1: interfacehdr
+            0x00E2: interfaceend
+            0x013D: rrtabid
+            0x0161: dsf
+            0x01AF: prot4rev
+            0x01C0: excel9file
+            0x0809: bof

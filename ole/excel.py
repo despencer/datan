@@ -53,7 +53,8 @@ def shortmsunicode(rawdata):
     return rawdata[2:2+size].decode(method)
 
 def loadmeta(module):
-    wbsfmt = Biff8StreamFormatter()
     module.addtypes( { 'biff8': Biff8RecordReader.getreader } )
     module.addfunctions( {'longmsunicode': longmsunicode, 'shortmsunicode': shortmsunicode } )
-    module.addformatters( {'wbstream': wbsfmt.format } )
+
+def loadformatters(fmt):
+    fmt.addformatters( {'wbstream': Biff8StreamFormatter() } )
