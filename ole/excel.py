@@ -38,12 +38,19 @@ class Biff8RecordReader:
         return reader
 
 class Biff8StreamFormatter(formatter.StreamFormatter):
+    def __init__(self, yoptions):
+        super().__init__()
+        self.lookup = yoptions['lookups']['wbtypes']
+
     def format(self, datafile, record=None):
         ret = ''
         datafile.seek(self.pos)
         data = datafile.read(self.size)
         for i in range( min(self.size,len(data)) ):
-            ret += '{0:08X} {1:08X}\n'.format(self.pos+i, data[i].rectype)
+            ret += '{0:08X} {1:08X}'.format(self.pos+i, data[i].rectype)
+            if data[i].rectype in self.lookup:
+                ret += ' ' + self.lookup[data[i].rectype]
+            ret += '\n'
         return ret
 
 
@@ -64,4 +71,4 @@ def loadmeta(module):
     module.addfunctions( {'longmsunicode': longmsunicode, 'shortmsunicode': shortmsunicode } )
 
 def loadformatters(fmt, yoptions):
-    fmt.addformatters( {'wbstream': Biff8StreamFormatter() } )
+    fmt.addformatters( {'wbstream': Biff8StreamFormatter(yoptions) } )
