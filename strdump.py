@@ -7,9 +7,9 @@ def makeformat(fmt, args, strdef):
     if len(args.formatter) > 0:
         fmt.load(args.formatter, strdef)
     if len(args.formatsize) > 0:
-        fmt.parameters['stream'].size = eval(args.formatsize)
+        fmt.parameters['size'].set( eval(args.formatsize) )
     if len(args.formatpos) > 0:
-        fmt.parameters['stream'].pos = eval(args.formatpos)
+        fmt.parameters['pos'].set( eval(args.formatpos) )
 
 def dump(args):
     print('Filename:', args.filename)

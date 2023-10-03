@@ -24,6 +24,9 @@ class Formatter:
     def addformatters(self, formatters):
         for name, formatter in formatters.items():
             self.formatters[name] = formatter.format
+            for pname, param in self.parameters.items():
+                if hasattr(formatter, pname):
+                    param.append(formatter)
 
     def load(self, filename, strdef):
         with open(filename) as fmtfile:
@@ -99,27 +102,17 @@ def checkarray(formatter, typename):
         return freeformatter
     return lambda x: arrayformatter(x, formatter.get(base))
 
-class StreamParameters:
-    def __init__(self, *formatters):
+class FormatterParameter:
+    def __init__(self, name, *formatters):
+        self.name = name
         self.formatters = [ *formatters ]
 
-    @property
-    def pos(self):
-        return None
+    def append(self, formatter):
+        self.formatters.append(formatter)
 
-    @pos.setter
-    def pos(self, value):
+    def set(self, value):
         for s in self.formatters:
-            s.pos = value
-
-    @property
-    def size(self):
-        return None
-
-    @size.setter
-    def size(self, value):
-        for s in self.formatters:
-            s.size = value
+            setattr(s, self.name, value)
 
 def createdefault():
     form = Formatter()
@@ -131,7 +124,8 @@ def createdefault():
                         'stream' :lambda x: stream.format(x), 'recordstream' :lambda x, **kv: recordstream.format(x, **kv),
                         'bytes':lambda x:'{:02X}'.format(x) }
     form.rules.extend( [ lambda x: checkarray(form, x) ] )
-    form.parameters['stream'] = StreamParameters( stream, recordstream )
+    form.parameters['pos'] = FormatterParameter('pos', stream, recordstream )
+    form.parameters['size'] = FormatterParameter('size', stream, recordstream )
     return form
 
 default = createdefault()
