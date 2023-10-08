@@ -3,6 +3,7 @@ formatters:
 options:
     lookups:
         wbtypes:
+            0x000A: eof
             0x000E: calcrefmode
             0x0012: protect
             0x0013: password

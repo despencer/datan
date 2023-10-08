@@ -2,6 +2,14 @@ import os
 import formatter
 import records
 
+class StreamItem:
+    def __init__(self, pos, item):
+        self.pos = pos
+        self.item = item
+
+    def __repr__(self):
+        return '{:08X}: '.format(self.pos) + formatter.indent(str(self.item)) + '\n'
+
 class StreamReader():
     def prettyprint(self, data):
         return formatter.formatsub(data, self.formatter)
@@ -162,13 +170,28 @@ class SerialStream:
         return self.pos
 
     def read(self, size):
+        return self.retrieve(size, None, False)
+
+    def select(self, condition):
+        self.seek(0)
+        return self.retrieve(None, condition, True)
+
+    def retrieve(self, size, condition, pointer):
         acc = []
-        while size > 0:
+        while True:
+            if size != None and size <= 0:
+                break
             if self.source.getpos() == self.sourcesize:
                 break
-            acc.append( self.record.read(self.source) )
+            item = self.record.read(self.source)
+            if condition == None or ( condition != None and condition(item) ):
+                if pointer:
+                    acc.append(StreamItem(self.pos, item))
+                else:
+                    acc.append(item)
             self.pos += 1
-            size -= 1
+            if size != None:
+                size -= 1
         return acc
 
     def __repr__(self):
