@@ -10,20 +10,7 @@ class StreamItem:
     def __repr__(self):
         return '{:08X}: '.format(self.pos) + formatter.indent(str(self.item)) + '\n'
 
-class StreamReader():
-    def prettyprint(self, data):
-        return formatter.formatsub(data, self.formatter)
-
-    @classmethod
-    def getreader(cls, loader):
-        reader = cls()
-        reader.formatter = reader.getformatter(loader)
-        return reader
-
-    def getformatter(self, loader):
-        return loader.getformatter('stream')
-
-class ByteStream:
+class FixedStream:
     def __init__(self, meta):
         self._meta = meta
         self.pos = 0
@@ -64,6 +51,41 @@ class ByteStream:
 
     def readall(self):
         return self.source
+
+class SubStream(FixedStream):
+    def __init__(self, meta, source):
+        super().__init__(meta)
+        self.source = list(source)
+
+    def selectrange(self, stop, start=0):
+        self.seek(0)
+        while True:
+            if self.pos >= len(self.source):
+                return
+            if self.source[self.pos][0] >= start:
+                break
+            self.pos += 1
+        stop = min(stop, len(self.source))
+        while self.pos < stop:
+            item = self.source[self.pos]
+            self.pos += 1
+            yield item
+
+class StreamReader():
+    def prettyprint(self, data):
+        return formatter.formatsub(data, self.formatter)
+
+    @classmethod
+    def getreader(cls, loader):
+        reader = cls()
+        reader.formatter = reader.getformatter(loader)
+        return reader
+
+    def getformatter(self, loader):
+        return loader.getformatter('stream')
+
+class ByteStream(FixedStream):
+    pass
 
 class ByteStreamReader(StreamReader):
     def read(self, datafile):
@@ -172,10 +194,6 @@ class SerialStream:
     def read(self, size):
         return self.retrieve(size, None, False)
 
-    def select(self, condition):
-        self.seek(0)
-        return self.retrieve(None, condition, True)
-
     def retrieve(self, size, condition, pointer):
         acc = []
         while True:
@@ -193,6 +211,28 @@ class SerialStream:
             if size != None:
                 size -= 1
         return acc
+
+    def selectiter(self, condition):
+        self.seek(0)
+        while True:
+            if self.source.getpos() == self.sourcesize:
+                break
+            item = self.record.read(self.source)
+            self.pos += 1
+            if condition(item):
+                yield self.pos-1, item
+
+    def select(self, condition):
+        return SubStream(self._meta, self.selectiter(condition))
+
+    def selectrange(self, stop, start=0):
+        self.seek(start)
+        while self.pos < stop:
+            if self.source.getpos() == self.sourcesize:
+                break
+            item = self.record.read(self.source)
+            self.pos += 1
+            yield self.pos-1, item
 
     def __repr__(self):
         return self._meta.prettyprint(self)

@@ -44,12 +44,10 @@ class Biff8StreamFormatter(formatter.StreamFormatter):
 
     def format(self, datafile, record=None):
         ret = ''
-        datafile.seek(self.pos)
-        data = datafile.read(self.size)
-        for i in range( min(self.size,len(data)) ):
-            ret += '{0:08X} {1:08X}'.format(self.pos+i, data[i].rectype)
-            if data[i].rectype in self.lookup:
-                ret += ' ' + self.lookup[data[i].rectype]
+        for pos, data in datafile.selectrange(self.pos+self.size, self.pos):
+            ret += '{0:08X} {1:08X}'.format(pos, data.rectype)
+            if data.rectype in self.lookup:
+                ret += ' ' + self.lookup[data.rectype]
             ret += '\n'
         return ret
 

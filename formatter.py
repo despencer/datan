@@ -50,7 +50,6 @@ class StreamFormatter:
         self.line = 16
 
     def format(self, datafile):
-        ret = ''
         datafile.seek(self.pos)
         data = datafile.read(self.size)
         for i in range( min(self.size,len(data)) ):
@@ -70,12 +69,10 @@ class RecordStreamFormatter:
 
     def format(self, datafile, record=None):
         ret = ''
-        datafile.seek(self.pos)
-        data = datafile.read(self.size)
         if record is None:
             record = str
-        for i in range( min(self.size,len(data)) ):
-            ret += '{:08X}'.format(self.pos+i) + indent(record(data[i])) + '\n'
+        for pos, data in datafile.selectrange(self.pos+self.size, self.pos):
+            ret += '{:08X}'.format(pos) + indent(record(data)) + '\n'
         return ret
 
 def arrayformatter(a, base):
