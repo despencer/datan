@@ -3,31 +3,58 @@ formatters:
 options:
     lookups:
         wbtypes:
+            0x0006: formula
             0x000A: eof
-            0x000E: calcrefmode
+            0x000C: calccount
+            0x000D: calcmode
+            0x000E: calcprecision
+            0x000F: calcrefmode
+            0x0010: calcdelta
+            0x0011: calciter
             0x0012: protect
             0x0013: password
+            0x0014: header
+            0x0015: footer
             0x0017: externsheet
             0x0019: winprotect
             0x0022: date1904
+            0x0026: leftmargin
+            0x0027: rightmargin
+            0x0028: topmargin
+            0x0029: bottommargin
+            0x002A: printrowcol
+            0x002B: printgrid
             0x0031: font
             0x003C: continue
             0x003D: window1
             0x0040: backup
             0x0042: codepage
+            0x004D: pls
+            0x0055: defcolwidth
             0x005C: writeaccess
+            0x005F: calcsaverecalc
+            0x007D: colinfo
+            0x0080: guts
+            0x0081: wsbool
+            0x0082: gridset
+            0x0083: hcenter
+            0x0084: vcenter
             0x0085: boundsheet8
             0x008C: country
             0x008D: hideobj
             0x0092: palette
             0x009C: builtinfngroupcount
+            0x00A1: setup
+            0x00BE: mulblank
             0x00C1: mms
+            0x00D7: dbcell
             0x00DA: bookbool
             0x00E0: xf
             0x00E1: interfacehdr
             0x00E2: interfaceend
             0x00EB: msodrawinggroup
             0x00FC: sst
+            0x00FD: labelsst
             0x00FF: extsst
             0x013D: rrtabid
             0x0160: useselfs
@@ -36,10 +63,18 @@ options:
             0x01AF: prot4rev
             0x01B7: refreshall
             0x01BC: prot4revpass
+            0x00BD: mulrk
             0x01C0: excel9file
             0x01C1: recalcid
+            0x0200: dimensions
+            0x0201: blank
+            0x0208: row
+            0x020B: index
+            0x0225: defaultrowheight
+            0x027E: rk
             0x0293: style
             0x041E: format
+            0x04BC: shrfmla
             0x0809: bof
             0x0863: bookext
             0x087C: xfcrc

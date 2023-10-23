@@ -52,7 +52,7 @@ class FixedStream:
     def readall(self):
         return self.source
 
-class SubStream(FixedStream):
+class SubSerialStream(FixedStream):
     def __init__(self, meta, source):
         super().__init__(meta)
         self.source = list(source)
@@ -226,7 +226,7 @@ class SerialStream:
                 yield self.pos-1, item
 
     def select(self, condition):
-        return SubStream(self._meta, self.selectiter(condition))
+        return SubSerialStream(self._meta, self.selectiter(condition))
 
     def selectrange(self, stop, start=0):
         self.seek(start)
