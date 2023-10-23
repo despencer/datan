@@ -1,17 +1,22 @@
 import os
 import streams
 import formatter
+from functools import cached_property
 
 class Biff8Record:
-    def __init__(self, rectype, size):
+    def __init__(self, rectype, size, reader):
         self.rectype = rectype
         self.size = size
-        self.record = None
+        self.reader = reader
 
     def __repr__(self):
         if self.record == None:
             return "BIFF8 {:04X} of size {:04X}".format(self.rectype, self.size)
         return str(self.record)
+
+    @cached_property
+    def record(self):
+        return self.reader.readrecord(self)
 
 class Biff8RecordReader:
     def __init__(self):
@@ -19,10 +24,8 @@ class Biff8RecordReader:
 
     def read(self, datafile):
         header = datafile.read(4)
-        record = Biff8Record(int.from_bytes(header[0:2], 'little'), int.from_bytes(header[2:4], 'little') )
+        record = Biff8Record(int.from_bytes(header[0:2], 'little'), int.from_bytes(header[2:4], 'little'), self)
         record.raw = datafile.read(record.size)
-        if record.rectype in self.mapping:
-            record.record = self.mapping[record.rectype].read(self.bytereader.from_bytes(record.raw))
         return record
 
     def readsize(self, datafile):
@@ -36,6 +39,11 @@ class Biff8RecordReader:
         reader = cls()
         reader.mapping = module.gettypemapper('biff8')
         return reader
+
+    def readrecord(self, record):
+        if record.rectype in self.mapping:
+            return self.mapping[record.rectype].read(self.bytereader.from_bytes(record.raw))
+        return None
 
 class Biff8StreamFormatter(formatter.StreamFormatter):
     def __init__(self, yoptions):

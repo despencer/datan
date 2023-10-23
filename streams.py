@@ -65,10 +65,13 @@ class SubStream(FixedStream):
             if self.source[self.pos][0] >= start:
                 break
             self.pos += 1
-        stop = min(stop, len(self.source))
-        while self.pos < stop:
+        size = stop - start
+        while self.pos < len(self.source):
+            if size == 0:
+                break
             item = self.source[self.pos]
             self.pos += 1
+            size -= 1
             yield item
 
 class StreamReader():
