@@ -7,18 +7,42 @@ options:
             0x000E: calcrefmode
             0x0012: protect
             0x0013: password
+            0x0017: externsheet
             0x0019: winprotect
             0x0022: date1904
             0x0031: font
+            0x003C: continue
             0x003D: window1
+            0x0040: backup
             0x0042: codepage
             0x005C: writeaccess
+            0x0085: boundsheet8
+            0x008C: country
+            0x008D: hideobj
+            0x0092: palette
             0x009C: builtinfngroupcount
             0x00C1: mms
+            0x00DA: bookbool
+            0x00E0: xf
             0x00E1: interfacehdr
             0x00E2: interfaceend
+            0x00EB: msodrawinggroup
+            0x00FC: sst
+            0x00FF: extsst
             0x013D: rrtabid
+            0x0160: useselfs
             0x0161: dsf
+            0x01AE: supbook
             0x01AF: prot4rev
+            0x01B7: refreshall
+            0x01BC: prot4revpass
             0x01C0: excel9file
+            0x01C1: recalcid
+            0x0293: style
+            0x041E: format
             0x0809: bof
+            0x0863: bookext
+            0x087C: xfcrc
+            0x087D: xfext
+            0x0892: styleext
+            0x105C: clrtclient

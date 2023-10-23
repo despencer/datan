@@ -101,6 +101,19 @@ records:
           type: bytes[112]
         - field: username
           function: "ole_longmsunicode(usernameraw)"
+
+# 0x0085:
+    boundsheet8:
+        - field: startpos
+          type: uint32
+        - field: type
+          type: uint16
+        - field: rawname
+          type: filler
+        - field: name
+          function: "ole_shortmsunicode(rawname.readall())"
+
+
 # 0x09C
     builtinfngroupcount:
         - field: count
@@ -163,6 +176,7 @@ mappings:
         0x003D: window1
         0x0042: codepage
         0x005C: writeaccess
+        0x0085: boundsheet8
         0x009C: builtinfngroupcount
         0x00C1: mms
         0x00E1: interfacehdr

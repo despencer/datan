@@ -252,7 +252,7 @@ class SerialStream:
             target = self.pos
             self.syncatpos()
             while self.pos < target:
-                if self.size != None and self.pos >= size:
+                if self.size != None and self.pos >= self.size:
                     return
                 self.syncroll()
 

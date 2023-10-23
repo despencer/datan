@@ -50,6 +50,7 @@ class StreamFormatter:
         self.line = 16
 
     def format(self, datafile):
+        ret = ''
         datafile.seek(self.pos)
         data = datafile.read(self.size)
         for i in range( min(self.size,len(data)) ):
