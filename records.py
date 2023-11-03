@@ -66,20 +66,21 @@ class PlainRecordReader:
         prec = PlainRecordReader()
         prec.name = module.namespace + name
         for yfield in yrec:
-            field = FieldReader()
-            field.name = yfield['field']
-            if 'function' in yfield:
-                field.reader = FunctionReader(yfield['function'], module.getfunctions())
-                field.preread.append( field.reader.setcontext )
-                field.formatter = str
-            else:
-                field.reader = module.getreader(yfield['type'], LoaderXRef(field, 'reader', meta=yfield))
-                field.formatter = module.loader.formatter.get(yfield['type'])
-                if 'params' in yfield:
-                    cls.loadparam(module.loader, field, yfield['params'])
-                if hasattr(field.reader, 'loadmeta'):
-                    field.reader.loadmeta(module, yfield)
-            prec.fields.append(field)
+            if 'field' in yfield:
+                field = FieldReader()
+                field.name = yfield['field']
+                if 'function' in yfield:
+                    field.reader = FunctionReader(yfield['function'], module.getfunctions())
+                    field.preread.append( field.reader.setcontext )
+                    field.formatter = str
+                else:
+                    field.reader = module.getreader(yfield['type'], LoaderXRef(field, 'reader', meta=yfield))
+                    field.formatter = module.loader.formatter.get(yfield['type'])
+                    if 'params' in yfield:
+                        cls.loadparam(module.loader, field, yfield['params'])
+                    if hasattr(field.reader, 'loadmeta'):
+                        field.reader.loadmeta(module, yfield)
+                prec.fields.append(field)
         return prec
 
     @classmethod

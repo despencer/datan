@@ -3,6 +3,15 @@ import streams
 import formatter
 from functools import cached_property
 
+class Workbook:
+    def __init__(self):
+        pass
+
+class WorkbookLoader:
+    def __init__(self, rawstream):
+        self.rawstream = rawstream
+        self.target = Workbook()
+
 class Biff8Record:
     def __init__(self, rectype, size, reader):
         self.rectype = rectype
@@ -59,6 +68,8 @@ class Biff8StreamFormatter(formatter.StreamFormatter):
             ret += '\n'
         return ret
 
+def bookloader(rawstream):
+    return WorkbookLoader(rawstream)
 
 def longmsunicode(rawdata):
     method = 'ascii' if (rawdata[2] & 0x80) == 0 else 'utf-16'
@@ -74,7 +85,7 @@ def shortmsunicode(rawdata):
 
 def loadmeta(module):
     module.addtypes( { 'biff8': Biff8RecordReader.getreader } )
-    module.addfunctions( {'longmsunicode': longmsunicode, 'shortmsunicode': shortmsunicode } )
+    module.addfunctions( {'longmsunicode': longmsunicode, 'shortmsunicode': shortmsunicode, 'bookloader': bookloader } )
 
 def loadformatters(fmt, yoptions):
     fmt.addformatters( {'wbstream': Biff8StreamFormatter(yoptions) } )

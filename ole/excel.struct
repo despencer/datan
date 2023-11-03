@@ -27,6 +27,14 @@ records:
             - name: source
               reference: wbrawstream
           record: biff8
+        - field: workbookloader
+          function: "ole_bookloader(wbrawstream)"
+        - field: workbook
+          function: "workbookloader.target"
+        - transform:
+            - with: workbookloader
+              for: "wbstream.select(lambda x: x.rectype == 0x85).readall()"
+              do: addsheet
 
 # 0x0E:
     calcprecision:
@@ -186,3 +194,4 @@ mappings:
         0x01AF: prot4rev
         0x01C0: excel9file
         0x0809: bof
+
