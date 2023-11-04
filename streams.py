@@ -74,6 +74,10 @@ class SubSerialStream(FixedStream):
             size -= 1
             yield item
 
+    def readall(self):
+        for item in self.source:
+            yield item[1]
+
 class StreamReader():
     def prettyprint(self, data):
         return formatter.formatsub(data, self.formatter)

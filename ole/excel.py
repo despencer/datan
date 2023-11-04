@@ -5,12 +5,28 @@ from functools import cached_property
 
 class Workbook:
     def __init__(self):
-        pass
+        self.sheets = {}
+
+    def addsheet(self, name):
+        self.sheets[name] = Sheet(name)
+        return self.sheets[name]
+
+class Sheet:
+    def __init__(self, name):
+        self.name = name
+
+class SheetLoader:
+    def __init__(self, sheet):
+        self.sheet = sheet
 
 class WorkbookLoader:
     def __init__(self, rawstream):
         self.rawstream = rawstream
         self.target = Workbook()
+        self.sheets = []
+
+    def addsheet(self, biff8):
+        self.sheets.append( SheetLoader( self.target.addsheet(biff8.record.name) ) )
 
 class Biff8Record:
     def __init__(self, rectype, size, reader):

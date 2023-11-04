@@ -31,10 +31,9 @@ records:
           function: "ole_bookloader(wbrawstream)"
         - field: workbook
           function: "workbookloader.target"
-        - transform:
-            - with: workbookloader
-              for: "wbstream.select(lambda x: x.rectype == 0x85).readall()"
-              do: addsheet
+        - transform: workbookloader
+          for: "wbstream.select(lambda x: x.rectype == 0x85).readall()"
+          do: addsheet
 
 # 0x0E:
     calcprecision:

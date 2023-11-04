@@ -2,6 +2,7 @@ import yaml
 import os
 import importlib
 import streams
+import transform
 
 class FieldReader:
     def __init__(self):
@@ -24,6 +25,7 @@ class PlainRecord:
 class PlainRecordReader:
     def __init__(self):
         self.fields = []
+        self.transforms = []
 
     def read(self, datafile):
         data = PlainRecord(self)
@@ -34,6 +36,8 @@ class PlainRecordReader:
             for pr in f.postread:
                 pr(data, fvalue)
             setattr(data, f.name, fvalue)
+        for t in self.transforms:
+            t.perform(self.getfields(data))
         return data
 
     def prettyprint(self, data):
@@ -81,6 +85,8 @@ class PlainRecordReader:
                     if hasattr(field.reader, 'loadmeta'):
                         field.reader.loadmeta(module, yfield)
                 prec.fields.append(field)
+            elif 'transform' in yfield:
+                prec.transforms.append( transform.loadtransformer(yfield, module) )
         return prec
 
     @classmethod
