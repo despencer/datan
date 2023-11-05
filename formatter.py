@@ -130,3 +130,6 @@ default = createdefault()
 
 def getdefault():
     return default
+
+def getminimal():
+    return Formatter()

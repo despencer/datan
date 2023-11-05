@@ -1,5 +1,6 @@
 import yaml
 import os
+import sys
 import importlib
 import streams
 import transform
@@ -145,6 +146,7 @@ class Structure:
         self.start = None
         self.pymodules = {}
         self.xrefs = []
+        self.target = None
 
     def read(self, datafile):
         root = self.start.read(datafile)
@@ -152,6 +154,11 @@ class Structure:
         for rx in self.xrefs:
             rx.resolve(rf)
         return root
+
+    def gettarget(self, obj):
+        if self.target == None:
+            return obj
+        return eval(self.target, obj.getfields())
 
     def __repr__(self):
         return '\n'.join( map(str, self.records.values()) )
@@ -360,6 +367,8 @@ class Loader:
                 module.module.loadmeta(module)
             if 'records' in ystr:
                 self.loadrecords(ystr, module, toplevel)
+            if toplevel and 'target' in ystr:
+                self.structure.target = ystr['target']
 
     def loadrecords(self, ystr, module, toplevel):
         for yrname, yrec in ystr['records'].items():
@@ -386,13 +395,13 @@ class Loader:
 
 def loadpyfile(structure, filename):
     pyfile = os.path.splitext(filename)[0] + '.py'
-    pymodule = os.path.splitext(filename)[0].replace('/','.')
     if os.path.exists(pyfile):
         if pyfile in structure.pymodules:
             print(pyfile, 'already loaded')
         else:
             print(pyfile, 'loaded')
-            structure.pymodules[pyfile] = importlib.import_module(pymodule)
+            sys.path.append(os.path.dirname(pyfile))
+            structure.pymodules[pyfile] = importlib.import_module(os.path.basename(pyfile)[:-3])
         return structure.pymodules[pyfile]
     else:
         print(pyfile, 'is not exist, skipped')

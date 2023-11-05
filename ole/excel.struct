@@ -2,6 +2,7 @@ namespace: ole
 version: 1
 imports:
     - ole
+target: workbook
 records:
     excelfile:
         - field: file
