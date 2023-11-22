@@ -13,6 +13,15 @@ class FieldReader:
     def __repr__(self):
         return self.name
 
+    def read(self, datafile, data):
+        for pr in self.preread:
+            pr(data)
+        fvalue = self.reader.read(datafile)
+        for pr in self.postread:
+            pr(data, fvalue)
+        setattr(data, self.name, fvalue)
+
+
 class PlainRecord:
     def __init__(self, meta):
         self._meta = meta
@@ -31,12 +40,7 @@ class PlainRecordReader:
     def read(self, datafile):
         data = PlainRecord(self)
         for f in self.fields:
-            for pr in f.preread:
-                pr(data)
-            fvalue = f.reader.read(datafile)
-            for pr in f.postread:
-                pr(data, fvalue)
-            setattr(data, f.name, fvalue)
+            f.read(datafile, data)
         for t in self.transforms:
             t.perform(self.getfields(data))
         return data
@@ -71,24 +75,28 @@ class PlainRecordReader:
         prec = PlainRecordReader()
         prec.name = module.namespace + name
         for yfield in yrec:
-            if 'field' in yfield:
-                field = FieldReader()
-                field.name = yfield['field']
-                if 'function' in yfield:
-                    field.reader = FunctionReader(yfield['function'], module.getfunctions())
-                    field.preread.append( field.reader.setcontext )
-                    field.formatter = str
-                else:
-                    field.reader = module.getreader(yfield['type'], LoaderXRef(field, 'reader', meta=yfield))
-                    field.formatter = module.loader.formatter.get(yfield['type'])
-                    if 'params' in yfield:
-                        cls.loadparam(module.loader, field, yfield['params'])
-                    if hasattr(field.reader, 'loadmeta'):
-                        field.reader.loadmeta(module, yfield)
-                prec.fields.append(field)
+            if 'field' in yfield or 'set' in yfield:
+                prec.fields.append( cls.loadfield(yfield, module)  )
             elif 'transform' in yfield:
                 prec.transforms.append( transform.loadtransformer(yfield, module) )
         return prec
+
+    @classmethod
+    def loadfield(cls, yfield, module)
+        field = FieldReader()
+        field.name = yfield['field']
+        if 'function' in yfield:
+            field.reader = FunctionReader(yfield['function'], module.getfunctions())
+            field.preread.append( field.reader.setcontext )
+            field.formatter = str
+        else:
+            field.reader = module.getreader(yfield['type'], LoaderXRef(field, 'reader', meta=yfield))
+            field.formatter = module.loader.formatter.get(yfield['type'])
+            if 'params' in yfield:
+                cls.loadparam(module.loader, field, yfield['params'])
+            if hasattr(field.reader, 'loadmeta'):
+                field.reader.loadmeta(module, yfield)
+        return field
 
     @classmethod
     def loadparam(cls, loader, field, yparams):
@@ -406,6 +414,9 @@ def loadpyfile(structure, filename):
     else:
         print(pyfile, 'is not exist, skipped')
         return None
+
+def loadfieldreader(yfield, module):
+    return PlainRecordReader.loadfield(yfield, module)
 
 def loadmeta(filename, formatter):
     loader = Loader(formatter)

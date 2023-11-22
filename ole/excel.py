@@ -16,8 +16,10 @@ class Sheet:
         self.name = name
 
 class SheetLoader:
-    def __init__(self, sheet):
+    def __init__(self, sheet, wbrawstream, offset):
         self.sheet = sheet
+        self.wbrawstream = wbrawstream
+        self.offset = offset
 
 class WorkbookLoader:
     def __init__(self, rawstream):
@@ -26,7 +28,7 @@ class WorkbookLoader:
         self.sheets = []
 
     def addsheet(self, biff8):
-        self.sheets.append( SheetLoader( self.target.addsheet(biff8.record.name) ) )
+        self.sheets.append( SheetLoader( self.target.addsheet(biff8.record.name), self.rawstream, biff8.record.startpos ))
 
 class Biff8Record:
     def __init__(self, rectype, size, reader):
@@ -49,6 +51,8 @@ class Biff8RecordReader:
 
     def read(self, datafile):
         header = datafile.read(4)
+        if len(header) < 4:
+            return None
         record = Biff8Record(int.from_bytes(header[0:2], 'little'), int.from_bytes(header[2:4], 'little'), self)
         record.raw = datafile.read(record.size)
         return record

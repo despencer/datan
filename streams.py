@@ -11,6 +11,7 @@ class StreamItem:
         return '{:08X}: '.format(self.pos) + formatter.indent(str(self.item)) + '\n'
 
 class FixedStream:
+    ''' A stream that operates on limited and fixed array of data '''
     def __init__(self, meta):
         self._meta = meta
         self.pos = 0
@@ -103,7 +104,40 @@ class ByteStreamReader(StreamReader):
         stream.source = rawdata
         return stream
 
+class SubStream:
+    ''' Reads a stream positioned inside other stream by a fixed offset '''
+    def __init__(self):
+        self.source = None
+        self.offset = 0
+
+    def seek(self, delta, postype=os.SEEK_SET):
+        if postype == os.SEEK_SET:
+            self.source.seek(self.offset+delta, postype)
+        else
+            self.source.seek(delta, postype)
+
+    def read(self, size):
+        return self.source.read(size)
+
+    def getpos(self):
+        ret = self.source.getpos() - self.offset
+        if ret < 0:
+            ret = 0
+        return ret
+
+    @classmethod
+    def make(cls, source, offset):
+        ss = cls()
+        ss.source = source
+        ss.offset = offset
+        return ss
+
+class SubStreamReader(StreamReader):
+    def read(self, datafile):
+        return SubStream(self)
+
 class RecordStream:
+    ''' Reads a stream that consists of repeated records of equal size '''
     def __init__(self, meta, record):
         self._meta = meta
         self.record = record
@@ -173,6 +207,7 @@ class RecordStreamReader(StructuredStreamReader):
 
 
 class SerialStream:
+    ''' Reads a stream that consists of records of variable size '''
     def __init__(self, meta, record):
         self._meta = meta
         self.record = record
@@ -288,4 +323,4 @@ class SerialStreamReader(StructuredStreamReader):
 
 def loadmeta(module):
     module.addtypes( { 'bytestream': ByteStreamReader.getreader, 'recordstream': RecordStreamReader.getreader,
-                       'serialstream': SerialStreamReader.getreader } )
+                       'serialstream': SerialStreamReader.getreader, 'substream': SubStreamReader } )

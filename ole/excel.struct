@@ -33,8 +33,33 @@ records:
         - field: workbook
           function: "workbookloader.target"
         - transform: workbookloader
-          for: "wbstream.select(lambda x: x.rectype == 0x85).readall()"
+          with: "wbstream.select(lambda x: x.rectype == 0x85).readall()"
           do: addsheet
+        - transform: "workbookloader.sheets"
+          do:
+             - set: rawstream
+               type: substream
+               params:
+                 - name: source
+                   reference: wbrawstream
+                 - name. offset
+                   reference: bookoffset
+             - set: bookstream
+               type: serialstream
+               params:
+                 - name: source
+                   reference: wbrawstream
+          record: biff8
+             - parse: bookstream
+               machine:
+                 - state: default
+                   default:
+                       action: next
+                   actions:
+                     - on: "[0].rectype == 0x027E"
+                       do: addcell
+                     - on: "[0].rectype == 0x0A"
+                       action: stop
 
 # 0x0E:
     calcprecision:
@@ -164,6 +189,17 @@ records:
 # 0x1C0
     excel9file: []
 
+# 0x027E:
+    rk:
+        - field: row
+          type: uint16
+        - field: column
+          type: uint16
+        - field: ixfe
+          type: uint16
+        - field: rknum
+          type: uint32
+
 # 0x0809
     bof:
         - field: vers
@@ -193,5 +229,6 @@ mappings:
         0x0161: dsf
         0x01AF: prot4rev
         0x01C0: excel9file
+        0x027E: rk
         0x0809: bof
 
