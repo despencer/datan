@@ -113,7 +113,7 @@ class SubStream:
     def seek(self, delta, postype=os.SEEK_SET):
         if postype == os.SEEK_SET:
             self.source.seek(self.offset+delta, postype)
-        else
+        else:
             self.source.seek(delta, postype)
 
     def read(self, size):
@@ -323,4 +323,4 @@ class SerialStreamReader(StructuredStreamReader):
 
 def loadmeta(module):
     module.addtypes( { 'bytestream': ByteStreamReader.getreader, 'recordstream': RecordStreamReader.getreader,
-                       'serialstream': SerialStreamReader.getreader, 'substream': SubStreamReader } )
+                       'serialstream': SerialStreamReader.getreader, 'substream': SubStreamReader.getreader } )

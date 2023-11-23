@@ -3,7 +3,7 @@ import records
 
 class Transformer:
     def __init__(self):
-        trans.operands = None
+        self.operands = None
 
     def transform(self, environ, data=None, operands=None):
         obj = eval(self.context, environ)
@@ -23,9 +23,9 @@ class TransformerActions:
                 func = getattr(tobj, action)
                 func(op)
             else:
-                action(obj.getfields, data=tobj, operands=op)
+                action(tobj.getfields, data=tobj, operands=op)
 
-class TrasformerSetter:
+class TransformerSetter:
     def __init__(self, field):
         self.field = field
 
@@ -37,14 +37,15 @@ class TransformLoader:
     def loadactions(cls, ymeta, module):
         ''' parsing "do" branch in yaml '''
         trans = TransformerActions()
-        if isinstance(ymeta['do'], list):
-            for ydo in ymeta['do']:
+        if isinstance(ymeta, list):
+            for ydo in ymeta:
                 if isinstance(ydo, str):
                     trans.actions.append(ydo)
                 else:
                     trans.actions.append( cls.load(ydo, module).transform )
         else:
-            trans.actions.append(ymeta['do'])
+            trans.actions.append(ymeta)
+        return trans
 
     @classmethod
     def load (cls, ymeta, module):
@@ -58,10 +59,10 @@ class TransformLoader:
         elif 'set' in ymeta:
             trans = Transformer()
             trans.action = TransformerSetter( records.loadfieldreader(ymeta, module) )
+            return trans
         elif 'parse' in ymeta:
             return parser.loadparser(ymeta, module)
-        raise Exception('Unknown transformer method at' + ymeta)
-
+        raise Exception('Unknown transformer method at' + str(ymeta))
 
 def loadtransformer(ymeta, module):
     return TransformLoader.load(ymeta, module)

@@ -42,23 +42,23 @@ records:
                params:
                  - name: source
                    reference: wbrawstream
-                 - name. offset
+                 - name: offset
                    reference: bookoffset
              - set: bookstream
                type: serialstream
                params:
                  - name: source
                    reference: wbrawstream
-          record: biff8
+               record: biff8
              - parse: bookstream
                machine:
                  - state: default
                    default:
                        action: next
                    actions:
-                     - on: "[0].rectype == 0x027E"
+                     - "on": "[0].rectype == 0x027E"
                        do: addcell
-                     - on: "[0].rectype == 0x0A"
+                     - "on": "[0].rectype == 0x0A"
                        action: stop
 
 # 0x0E:

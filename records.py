@@ -42,7 +42,7 @@ class PlainRecordReader:
         for f in self.fields:
             f.read(datafile, data)
         for t in self.transforms:
-            t.perform(self.getfields(data))
+            t.transform(self.getfields(data))
         return data
 
     def prettyprint(self, data):
@@ -82,9 +82,9 @@ class PlainRecordReader:
         return prec
 
     @classmethod
-    def loadfield(cls, yfield, module)
+    def loadfield(cls, yfield, module):
         field = FieldReader()
-        field.name = yfield['field']
+        field.name = yfield['field'] if 'field' in yfield else yfield['set']
         if 'function' in yfield:
             field.reader = FunctionReader(yfield['function'], module.getfunctions())
             field.preread.append( field.reader.setcontext )

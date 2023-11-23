@@ -111,13 +111,14 @@ class ParserLoader:
                     self.parser.start = state
         for ydef in ymachine:
             if 'state' in ydef:
-                self.loadstate(ydef['state'])
+                self.loadstate(ydef)
 
     @classmethod
     def load(cls, ymeta, module):
         loader = cls(module)
         loader.parser.source = ymeta['parse']
         loader.loadmachine(ymeta['machine'])
+        return loader.parser
 
 def loadparser(ymeta, module):
     return ParserLoader.load(ymeta, module)
