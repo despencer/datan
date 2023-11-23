@@ -289,6 +289,9 @@ class SerialStream:
         self.index = [0]
         self.sourcesize = len(self.source)
 
+    def getpos(self):
+        return self.pos
+
     def syncpos(self):
         if self.pos == None:
             self.syncatpos()

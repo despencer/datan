@@ -21,6 +21,9 @@ class SheetLoader:
         self.wbrawstream = wbrawstream
         self.bookoffset = offset
 
+    def addcell(self, rk):
+        pass
+
 class WorkbookLoader:
     def __init__(self, rawstream):
         self.rawstream = rawstream

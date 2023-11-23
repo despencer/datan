@@ -35,27 +35,28 @@ class Parser:
         self.finish = None
 
     def transform(self, environ, data=None, operands=None):
-        self.stream = eval(self.source, environ)
+        self.stream = StreamLookAhead(eval(self.source, environ))
         self.state = self.start
         self.finish = False
         while not self.finish:
             action = self.state.default
             for a in self.state.actions:
+                y = eval(a.condition, {'self':self})
                 if eval(a.condition, {'self':self}):
                     action = a
                     break
             if data != None and action.function != None:
-                getattr(data, action.function)(self.source[0])
+                getattr(data, action.function)(self.stream[0])
             self.state = action.nextstate
             action.action()
 
     def stall(self):
         ''' The parser expects something but haven't got it '''
-        raise Exception(f'Parser get unexpected {self.source[0]} in state {self.state.name}')
+        raise Exception(f'Parser get unexpected {self.stream[0]} in state {self.state.name}')
 
     def next(self):
         ''' Shifts to a next position in input stream '''
-        self.source.next()
+        self.stream.next()
 
     def stop(self):
         ''' Stops the parsing '''
@@ -88,7 +89,7 @@ class ParserLoader:
 
     def loadstatedefault(self, state, ydef):
         state.default.action = self.getaction(ydef, self.parser.stall)
-        state.next = state
+        state.default.nextstate = state
 
     def loadstate(self, ystate):
         state = self.states[ystate['state']]
@@ -96,11 +97,12 @@ class ParserLoader:
         self.loadstatedefault(state, ystate['default'])
         for yact in ystate['actions']:
             action = Action()
-            action.condition = 'self.source' + yact['on']
+            action.condition = 'self.stream' + yact['on']
             if 'do' in yact:
                 action.function = yact['do']
             action.action = self.getaction(yact, self.parser.next)
             action.nextstate = state
+            state.actions.append(action)
 
     def loadmachine(self, ymachine):
         for ydef in ymachine:
