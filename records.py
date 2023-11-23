@@ -202,7 +202,10 @@ class LocalRef:
         self.params[name] = xref
 
     def resolve(self, instance, field, reset):
-        context = instance.getfields()
+        if hasattr(instance, 'getfields'):
+            context = instance.getfields()
+        else:
+            context = vars(instance)
         for name, xref in self.params.items():
             value = eval(xref, context)
             setattr(field, name, value)

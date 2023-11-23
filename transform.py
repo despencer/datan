@@ -1,17 +1,30 @@
+from collections.abc import Iterable
 import parser
 import records
 
 class Transformer:
     def __init__(self):
         self.operands = None
+        self.action = None
+        self.context = None
 
     def transform(self, environ, data=None, operands=None):
-        obj = eval(self.context, environ)
+        if self.context == None:
+            obj = data
+        else:
+            obj = eval(self.context, environ)
         if self.operands != None:
             for op in eval(self.operands, environ):
-                self.action(obj, op)
+                self.transformobj(obj, op)
         else:
-            self.action(obj, None)
+            self.transformobj(obj, None)
+
+    def transformobj(self, tobj, op):
+        if isinstance(tobj, Iterable):
+            for pobj in tobj:
+                self.action(pobj, op)
+        else:
+            self.action(tobj, op)
 
 class TransformerActions:
     def __init__(self):
@@ -23,7 +36,11 @@ class TransformerActions:
                 func = getattr(tobj, action)
                 func(op)
             else:
-                action(tobj.getfields, data=tobj, operands=op)
+                if hasattr(tobj, 'getfields'):
+                    context = tobj.getfields()
+                else:
+                    context = vars(tobj)
+                action(context, data=tobj, operands=op)
 
 class TransformerSetter:
     def __init__(self, field):
@@ -58,7 +75,7 @@ class TransformLoader:
             return trans
         elif 'set' in ymeta:
             trans = Transformer()
-            trans.action = TransformerSetter( records.loadfieldreader(ymeta, module) )
+            trans.action = TransformerSetter( records.loadfieldreader(ymeta, module) ).perform
             return trans
         elif 'parse' in ymeta:
             return parser.loadparser(ymeta, module)

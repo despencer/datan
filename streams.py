@@ -106,7 +106,8 @@ class ByteStreamReader(StreamReader):
 
 class SubStream:
     ''' Reads a stream positioned inside other stream by a fixed offset '''
-    def __init__(self):
+    def __init__(self, meta):
+        self._meta = meta
         self.source = None
         self.offset = 0
 
@@ -124,6 +125,9 @@ class SubStream:
         if ret < 0:
             ret = 0
         return ret
+
+    def reset(self):
+        self.source.seek(self.offset)
 
     @classmethod
     def make(cls, source, offset):

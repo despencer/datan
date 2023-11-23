@@ -19,7 +19,7 @@ class SheetLoader:
     def __init__(self, sheet, wbrawstream, offset):
         self.sheet = sheet
         self.wbrawstream = wbrawstream
-        self.offset = offset
+        self.bookoffset = offset
 
 class WorkbookLoader:
     def __init__(self, rawstream):
