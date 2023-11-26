@@ -11,9 +11,18 @@ class Workbook:
         self.sheets[name] = Sheet(name)
         return self.sheets[name]
 
+class Cell:
+    def __init__(self, value):
+        self.value = value
+
+class Row:
+    def __init__(self):
+        self.cells = []
+
 class Sheet:
     def __init__(self, name):
         self.name = name
+        self.rows = []
 
 class SheetLoader:
     def __init__(self, sheet, wbrawstream, offset):

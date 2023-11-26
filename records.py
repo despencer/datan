@@ -4,6 +4,7 @@ import sys
 import importlib
 import streams
 import transform
+import parser
 
 class FieldReader:
     def __init__(self):
@@ -79,6 +80,8 @@ class PlainRecordReader:
                 prec.fields.append( cls.loadfield(yfield, module)  )
             elif 'transform' in yfield:
                 prec.transforms.append( transform.loadtransformer(yfield, module) )
+            elif 'parse' in yfield:
+                prec.transforms.append( parser.loadparser(yfield, module) )
         return prec
 
     @classmethod

@@ -2,6 +2,7 @@ class StreamLookAhead:
     def __init__(self, source):
         self.source = source
         self.buffer = []
+        self.source.seek(0)
 
     def next(self):
         if len(self.buffer) > 0:
@@ -30,6 +31,7 @@ class StreamLookAhead:
 class Parser:
     def __init__(self):
         self.source = None
+        self.context = None
         self.start = None
         self.stream = None
         self.finish = None
@@ -38,6 +40,8 @@ class Parser:
         self.stream = StreamLookAhead(eval(self.source, environ))
         self.state = self.start
         self.finish = False
+        if self.context != None and data == None:
+            data = eval(self.context, environ)
         while not self.finish:
             action = self.state.default
             for a in self.state.actions:
@@ -119,6 +123,8 @@ class ParserLoader:
     def load(cls, ymeta, module):
         loader = cls(module)
         loader.parser.source = ymeta['parse']
+        if 'with' in ymeta:
+            loader.parser.context = ymeta['with']
         loader.loadmachine(ymeta['machine'])
         return loader.parser
 

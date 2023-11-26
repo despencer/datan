@@ -32,6 +32,16 @@ records:
           function: "ole_bookloader(wbrawstream)"
         - field: workbook
           function: "workbookloader.target"
+        - parse: wbstream
+          with: workbookloader
+          machine:
+            - state: default
+              default:
+                   action: next
+              actions:
+                 - "on": "[0].rectype == 0x0FC"
+                   do: setstringtable
+                   action: stop
         - transform: workbookloader
           with: "wbstream.select(lambda x: x.rectype == 0x85).readall()"
           do: addsheet
@@ -109,6 +119,11 @@ records:
         - field: fontname
           function: "ole_shortmsunicode(rawfontname.readall())"
 
+# 0x03C:
+    reccontinue:
+        - field: rawdata
+          type: filler
+
 # 0x03D:
     window1:
         - field: xwn
@@ -165,6 +180,26 @@ records:
 # 0x0E2
     interfaceend: []
 
+# 0x0FC:
+    sst:
+        - field: total
+          type: uint32
+        - field: unique
+          type: uint32
+        - field: rawstrings
+          type: filler
+
+# 0x0FD:
+    labelsst:
+        - field: row
+          type: uint16
+        - field: column
+          type: uint16
+        - field: ixfe
+          type: uint16
+        - field: isst
+          type: uint32
+
 # 0x13D:
     rrtabid:
         - field: filler
@@ -217,6 +252,7 @@ mappings:
         0x0019: winprotect
         0x0022: date1904
         0x0031: font
+        0x003C: reccontinue
         0x003D: window1
         0x0042: codepage
         0x005C: writeaccess
@@ -225,6 +261,8 @@ mappings:
         0x00C1: mms
         0x00E1: interfacehdr
         0x00E2: interfaceend
+        0x00FC: sst
+        0x00FD: labelsst
         0x013D: rrtabid
         0x0161: dsf
         0x01AF: prot4rev
