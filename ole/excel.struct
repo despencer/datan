@@ -40,8 +40,18 @@ records:
                    action: next
               actions:
                  - "on": "[0].rectype == 0x0FC"
-                   do: setstringtable
+                   action: next
+                   push:
+                      next: stringtable
+                      with: collector
+                      pop:  setstringtable
+            - state: stringtable
+              default:
                    action: stop
+              actions:
+                 - "on": "[0].rectype == 0x03C"
+                   action: next
+                   do: append
         - transform: workbookloader
           with: "wbstream.select(lambda x: x.rectype == 0x85).readall()"
           do: addsheet

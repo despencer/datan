@@ -1,3 +1,10 @@
+class Collector:
+    def __init__(self, first):
+        self.data = [ first ]
+
+    def append(self, item):
+        self.data.append(item)
+
 class StreamLookAhead:
     def __init__(self, source):
         self.source = source
@@ -34,25 +41,35 @@ class Parser:
         self.context = None
         self.start = None
         self.stream = None
-        self.finish = None
+        self.nodes = []
 
     def transform(self, environ, data=None, operands=None):
         self.stream = StreamLookAhead(eval(self.source, environ))
-        self.state = self.start
-        self.finish = False
         if self.context != None and data == None:
             data = eval(self.context, environ)
-        while not self.finish:
-            action = self.state.default
-            for a in self.state.actions:
+        self.nodes = [ Node(self.start, data) ]
+        while len(self.nodes) > 0:
+            top = self.nodes[-1]
+            action = top.state.default
+            for a in top.state.actions:
                 y = eval(a.condition, {'self':self})
                 if eval(a.condition, {'self':self}):
                     action = a
                     break
-            if data != None and action.function != None:
-                getattr(data, action.function)(self.stream[0])
-            self.state = action.nextstate
+            top.call(action.function, self.stream[0])
             action.action()
+            if action.push != None:
+                self.push(action.push)
+
+    def pop(self):
+        if len(self.nodes) > 1:
+            self.nodes[-2].call(self.nodes[-1].onpop, self.nodes[-1].context)
+        self.nodes.pop()
+
+    def push(self, pushst):
+        node = Node(pushst.nextstate, self.nodes[-1].call(pushst.context, self.stream[0]) )
+        node.onpop = pushst.onpop
+        self.nodes.append(node)
 
     def stall(self):
         ''' The parser expects something but haven't got it '''
@@ -64,7 +81,8 @@ class Parser:
 
     def stop(self):
         ''' Stops the parsing '''
-        self.finish = True
+        while(len(self.nodes)):
+            self.pop()
 
 class State:
     def __init__(self, name):
@@ -72,12 +90,28 @@ class State:
         self.default = None
         self.actions = []
 
+class Node:
+    def __init__(self, state, context):
+        self.state = state
+        self.context = context
+        self.onpop = None
+
+    def call(self, function, operand):
+        if self.context != None and function != None:
+            return getattr(self.context, function)(operand)
+
+class Push:
+    def __init__(self):
+        self.nextstate = None
+        self.context = None
+        self.onpop = None
+
 class Action:
     def __init__(self):
         self.condition = ""
-        self.nextstate = None
         self.action = None
         self.function = None
+        self.push = None
 
 class ParserLoader:
     def __init__(self, module):
@@ -93,7 +127,13 @@ class ParserLoader:
 
     def loadstatedefault(self, state, ydef):
         state.default.action = self.getaction(ydef, self.parser.stall)
-        state.default.nextstate = state
+
+    def loadpush(self, action, ypush):
+        action.push = Push()
+        action.push.nextstate = self.states[ypush['next']]
+        action.push.context = ypush['with']
+        if 'pop' in ypush:
+            action.push.onpop = ypush['pop']
 
     def loadstate(self, ystate):
         state = self.states[ystate['state']]
@@ -105,7 +145,8 @@ class ParserLoader:
             if 'do' in yact:
                 action.function = yact['do']
             action.action = self.getaction(yact, self.parser.next)
-            action.nextstate = state
+            if 'push' in yact:
+                self.loadpush(action, yact['push'])
             state.actions.append(action)
 
     def loadmachine(self, ymachine):
@@ -130,3 +171,6 @@ class ParserLoader:
 
 def loadparser(ymeta, module):
     return ParserLoader.load(ymeta, module)
+
+def collector(first):
+    return Collector(first)

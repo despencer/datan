@@ -1,5 +1,6 @@
 import os
 import streams
+import parser
 import formatter
 from functools import cached_property
 
@@ -38,6 +39,12 @@ class WorkbookLoader:
         self.rawstream = rawstream
         self.target = Workbook()
         self.sheets = []
+
+    def collector(self, first):
+        return parser.collector(first)
+
+    def setstringtable(self, recs):
+        pass
 
     def addsheet(self, biff8):
         self.sheets.append( SheetLoader( self.target.addsheet(biff8.record.name), self.rawstream, biff8.record.startpos ))
