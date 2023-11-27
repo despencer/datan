@@ -5,6 +5,9 @@ class Collector:
     def append(self, item):
         self.data.append(item)
 
+    def __getitem__(self, key):
+        return self.data[key]
+
 class StreamLookAhead:
     def __init__(self, source):
         self.source = source
@@ -57,9 +60,9 @@ class Parser:
                     action = a
                     break
             top.call(action.function, self.stream[0])
-            action.action()
             if action.push != None:
                 self.push(action.push)
+            action.action()
 
     def pop(self):
         if len(self.nodes) > 1:

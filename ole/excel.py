@@ -44,7 +44,10 @@ class WorkbookLoader:
         return parser.collector(first)
 
     def setstringtable(self, recs):
-        pass
+        bufs = [ recs[0].record.rawstrings ]
+        for rd in recs[1:]:
+            bufs.append(rd.record.rawdata)
+        self.rawstringstream = streams.CombinedStream.fromstreams(bufs, self.rawstream._meta)
 
     def addsheet(self, biff8):
         self.sheets.append( SheetLoader( self.target.addsheet(biff8.record.name), self.rawstream, biff8.record.startpos ))

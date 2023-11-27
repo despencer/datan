@@ -375,6 +375,13 @@ class CombinedStream:
     def reset(self):
         self.sizes = list(map( lambda s: s.seek(0, os.SEEK_END), self.sources))
 
+    @classmethod
+    def fromstreams(cls, streams, meta):
+        cs = cls(meta)
+        cs.sources = [ *streams ]
+        cs.reset()
+        return cs
+
 def loadmeta(module):
     module.addtypes( { 'bytestream': ByteStreamReader.getreader, 'recordstream': RecordStreamReader.getreader,
                        'serialstream': SerialStreamReader.getreader, 'substream': SubStreamReader.getreader } )
