@@ -178,54 +178,7 @@ class DataStreamReader(streams.StreamReader):
     def read(self, datafile):
         return DataStream(self, datafile)
 
-class CombinedStream:
-    def __init__(self, meta):
-        self._meta = meta
-        self.sources = None
-        self.sizes = None
-        self.pos = 0
-
-    def seek(self, delta, postype=os.SEEK_SET):
-        if postype == os.SEEK_END:
-            self.pos = sum(self.sizes)
-        elif postype == os.SEEK_CUR:
-            self.pos = self.pos + delta
-        else:
-            self.pos = delta
-        self.pos = min (self.pos, sum(self.sizes) )
-        self.pos = max (self.pos, 0)
-        return self.pos
-
-    def read(self, size):
-        acc = bytes()
-        isource, istart = self.mappos()
-        while size >= 0:
-            self.sources[isource].seek(istart)
-            chunk = self.sizes[isource] - istart
-            acc += self.sources[isource].read( min(size, chunk) )
-            self.pos += min(size, chunk)
-            size -= chunk
-            isource += 1
-            if isource >= len(self.sources):
-                break
-            istart = 0
-        return acc
-
-    def __repr__(self):
-        return self._meta.prettyprint(self)
-
-    def mappos(self):
-        istart = self.pos
-        for isource in range(len(self.sources)):
-            if istart < self.sizes[isource]:
-                return isource, istart
-            istart -= self.sizes[isource]
-        return len(self.sources), 0
-
-    def reset(self):
-        self.sizes = list(map( lambda s: s.seek(0, os.SEEK_END), self.sources))
-
-class FatSectorStream(CombinedStream):
+class FatSectorStream(streams.CombinedStream):
     def __init__(self, meta, inheader, chain):
         super().__init__(meta)
         self.inheader = inheader
