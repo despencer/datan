@@ -104,11 +104,42 @@ class Biff8StreamFormatter(formatter.StreamFormatter):
     def format(self, datafile, record=None):
         ret = ''
         for pos, data in datafile.selectrange(self.pos+self.size, self.pos):
-            ret += '{0:08X} {1:08X}'.format(pos, data.rectype)
+            ret += '{0:08X} {1:04X} size {2:08X}'.format(pos, data.rectype, data.size)
             if data.rectype in self.lookup:
                 ret += ' ' + self.lookup[data.rectype]
             ret += '\n'
         return ret
+
+class Biff8RichString:
+    def __init__(self, string):
+        self.string = string
+
+    def __repr__(self):
+        return self.string
+
+class Biff8RichStringReader:
+    def read(self, datafile):
+        header = datafile.read(3)
+        if len(header) < 3:
+            return None
+        charnum = int.from_bytes(header[0:2], 'little')
+        formatnum = 0
+        strmod = header[2]
+        if (strmod & 0x0F6) != 0:
+            pos = datafile.getpos()-3
+            raise Exception(f'Not yet implemented modifier {strmod:X} at {pos:X}')
+        method = 'ascii' if (strmod & 0x1) == 0 else 'utf-16'
+        if (strmod & 0x08) == 0x08:
+            formatnum = int.from_bytes(datafile.read(2), 'little')
+        size = charnum if method == 'ascii' else charnum*2
+        string = Biff8RichString( (datafile.read(size)).decode(method) )
+        if formatnum != 0:
+            datafile.seek(4*formatnum, os.SEEK_CUR)
+        return string
+
+    @classmethod
+    def getreader(cls, module):
+        return cls()
 
 def bookloader(rawstream):
     return WorkbookLoader(rawstream)
@@ -126,7 +157,7 @@ def shortmsunicode(rawdata):
     return rawdata[2:2+size].decode(method)
 
 def loadmeta(module):
-    module.addtypes( { 'biff8': Biff8RecordReader.getreader } )
+    module.addtypes( { 'biff8': Biff8RecordReader.getreader, 'richstring': Biff8RichStringReader.getreader } )
     module.addfunctions( {'longmsunicode': longmsunicode, 'shortmsunicode': shortmsunicode, 'bookloader': bookloader } )
 
 def loadformatters(fmt, yoptions):

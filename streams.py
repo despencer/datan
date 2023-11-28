@@ -324,6 +324,11 @@ class SerialStream:
         if self.source.getpos() == self.sourcesize:
             self.size = self.sourcesize
 
+    def __getitem__(self, key):
+        self.seek(key)
+        ret = self.read(1)
+        return ret[0] if len(ret) > 0 else None
+
 class SerialStreamReader(StructuredStreamReader):
     def read(self, datafile):
         return SerialStream(self, self.record)
@@ -371,6 +376,12 @@ class CombinedStream:
                 return isource, istart
             istart -= self.sizes[isource]
         return len(self.sources), 0
+
+    def __len__(self):
+        return sum(self.sizes)
+
+    def getpos(self):
+        return self.pos
 
     def reset(self):
         self.sizes = list(map( lambda s: s.seek(0, os.SEEK_END), self.sources))
