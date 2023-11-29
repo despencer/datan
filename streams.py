@@ -35,6 +35,9 @@ class FixedStream:
     def __len__(self):
         return len(self.source)
 
+    def __getitem__(self, key):
+        return self.source[key]
+
     def checkpos(self):
         if self.pos > len(self.source):
             self.pos = len(self.source)

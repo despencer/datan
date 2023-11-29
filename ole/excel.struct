@@ -53,14 +53,6 @@ records:
                    action: next
                    do: append
         - transform: workbookloader
-          do:
-             - set: stringstream
-               type: serialstream
-               params:
-                 - name: source
-                   reference: rawstringstream
-               record: richstring
-        - transform: workbookloader
           with: "wbstream.select(lambda x: x.rectype == 0x85).readall()"
           do: addsheet
         - transform: "workbookloader.sheets"

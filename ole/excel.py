@@ -39,15 +39,60 @@ class WorkbookLoader:
         self.rawstream = rawstream
         self.target = Workbook()
         self.sheets = []
+        self.stringtable = []
 
     def collector(self, first):
         return parser.collector(first)
 
     def setstringtable(self, recs):
-        bufs = [ recs[0].record.rawstrings ]
-        for rd in recs[1:]:
-            bufs.append(rd.record.rawdata)
-        self.rawstringstream = streams.CombinedStream.fromstreams(bufs, self.rawstream._meta)
+        irecord = 0
+        data = recs[0].record.rawstrings
+        while True:
+            charnum = int.from_bytes(data.read(2), 'little')
+            strmod = int.from_bytes(data.read(1), 'little')
+            if (strmod & 0x0F6) != 0:
+                ipos = data.getpos()-3
+                raise Exception(f'Not yet implemented modifier {strmod:X} at {irecord:X}/{ipos:X}')
+            if (strmod & 0x1) == 1:
+                method = 'utf-16'
+                size = 2*charnum
+            else:
+                method = 'ascii'
+                size = charnum
+            if (strmod & 0x08) == 0x08:
+                formatsize = int.from_bytes(data.read(2), 'little') * 4
+            else:
+                formatsize = 0
+            string = ''
+            if data.getpos()+size > len(data):
+                size = len(data)-data.getpos()
+                string += data.read(size).decode(method)
+                charnum -= size//2 if method == 'utf-16' else size
+                irecord += 1
+                data = recs[irecord].record.rawdata
+                data.seek(0)
+                strmod = int.from_bytes(data.read(1), 'little')
+                if (strmod & 0x1) == 1:
+                    method = 'utf-16'
+                    size = 2*charnum
+                else:
+                    method = 'ascii'
+                    size = charnum
+            string += data.read(size).decode(method)
+            self.stringtable.append(string)
+            if data.getpos()+formatsize > len(data):
+                formatsize -= len(data)-data.getpos()
+                data.seek(len(data)-data.getpos(), os.SEEK_CUR)
+            else:
+                data.seek(formatsize, os.SEEK_CUR)
+                formatsize = 0
+            if data.getpos() >= len(data):
+                irecord += 1
+                if irecord >= len(recs):
+                    break
+                data = recs[irecord].record.rawdata
+                data.seek(0)
+            data.seek(formatsize, os.SEEK_CUR)
 
     def addsheet(self, biff8):
         self.sheets.append( SheetLoader( self.target.addsheet(biff8.record.name), self.rawstream, biff8.record.startpos ))
@@ -110,37 +155,6 @@ class Biff8StreamFormatter(formatter.StreamFormatter):
             ret += '\n'
         return ret
 
-class Biff8RichString:
-    def __init__(self, string):
-        self.string = string
-
-    def __repr__(self):
-        return self.string
-
-class Biff8RichStringReader:
-    def read(self, datafile):
-        header = datafile.read(3)
-        if len(header) < 3:
-            return None
-        charnum = int.from_bytes(header[0:2], 'little')
-        formatnum = 0
-        strmod = header[2]
-        if (strmod & 0x0F6) != 0:
-            pos = datafile.getpos()-3
-            raise Exception(f'Not yet implemented modifier {strmod:X} at {pos:X}')
-        method = 'ascii' if (strmod & 0x1) == 0 else 'utf-16'
-        if (strmod & 0x08) == 0x08:
-            formatnum = int.from_bytes(datafile.read(2), 'little')
-        size = charnum if method == 'ascii' else charnum*2
-        string = Biff8RichString( (datafile.read(size)).decode(method) )
-        if formatnum != 0:
-            datafile.seek(4*formatnum, os.SEEK_CUR)
-        return string
-
-    @classmethod
-    def getreader(cls, module):
-        return cls()
-
 def bookloader(rawstream):
     return WorkbookLoader(rawstream)
 
@@ -157,7 +171,7 @@ def shortmsunicode(rawdata):
     return rawdata[2:2+size].decode(method)
 
 def loadmeta(module):
-    module.addtypes( { 'biff8': Biff8RecordReader.getreader, 'richstring': Biff8RichStringReader.getreader } )
+    module.addtypes( { 'biff8': Biff8RecordReader.getreader } )
     module.addfunctions( {'longmsunicode': longmsunicode, 'shortmsunicode': shortmsunicode, 'bookloader': bookloader } )
 
 def loadformatters(fmt, yoptions):
