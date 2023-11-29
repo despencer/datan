@@ -1,4 +1,5 @@
 import os
+import struct
 import streams
 import parser
 import formatter
@@ -42,17 +43,26 @@ class SheetLoader:
         self.wbrawstream = wbloader.rawstream
         self.bookoffset = offset
 
-    def addrkcell(self, rk):
-        pass
+    def addcell(self, biff8):
+        while len(self.sheet.rows) <= biff8.record.row:
+            self.sheet.rows.append(Row())
+        row = self.sheet.rows[biff8.record.row]
+        while len(row.cells) <= biff8.record.column:
+            row.cells.append( Cell(None) )
+        return row.cells[biff8.record.column]
+
+    def addrkcell(self, biff8):
+        if (biff8.record.rknum & 0x02) == 0x02:
+            value = int(biff8.record.rknum >> 2)
+        else:
+            value = bytes([0,0,0,0])+(biff8.record.rknum & 0xFFFFFFF7).to_bytes(4, 'little')
+            [value] = struct.unpack('d', value)
+        if (biff8.record.rknum & 0x01) == 0x01:
+            value = value / 100
+        self.addcell(biff8).value = value
 
     def addsstcell(self, biff8):
-        sst = biff8.record
-        while len(self.sheet.rows) <= sst.row:
-            self.sheet.rows.append(Row())
-        row = self.sheet.rows[sst.row]
-        while len(row.cells) <= sst.column:
-            row.cells.append( Cell(None) )
-        row.cells[sst.column].value = self.wbloader.stringtable[sst.isst]
+        self.addcell(biff8).value = self.wbloader.stringtable[biff8.record.isst]
 
 class WorkbookLoader:
     def __init__(self, rawstream):
