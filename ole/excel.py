@@ -12,6 +12,9 @@ class Workbook:
         self.sheets[name] = Sheet(name)
         return self.sheets[name]
 
+    def getsheet(self, name):
+        return self.sheets[name]
+
 class Cell:
     def __init__(self, value):
         self.value = value
@@ -25,14 +28,31 @@ class Sheet:
         self.name = name
         self.rows = []
 
+    def getcell(self, row, column):
+        if not (0 <= row and row < len(self.rows)):
+            return None
+        if not (0 <= column and column < len(self.rows[row].cells)):
+            return None
+        return self.rows[row].cells[column]
+
 class SheetLoader:
-    def __init__(self, sheet, wbrawstream, offset):
+    def __init__(self, wbloader, sheet, offset):
+        self.wbloader = wbloader
         self.sheet = sheet
-        self.wbrawstream = wbrawstream
+        self.wbrawstream = wbloader.rawstream
         self.bookoffset = offset
 
-    def addcell(self, rk):
+    def addrkcell(self, rk):
         pass
+
+    def addsstcell(self, biff8):
+        sst = biff8.record
+        while len(self.sheet.rows) <= sst.row:
+            self.sheet.rows.append(Row())
+        row = self.sheet.rows[sst.row]
+        while len(row.cells) <= sst.column:
+            row.cells.append( Cell(None) )
+        row.cells[sst.column].value = self.wbloader.stringtable[sst.isst]
 
 class WorkbookLoader:
     def __init__(self, rawstream):
@@ -95,7 +115,7 @@ class WorkbookLoader:
             data.seek(formatsize, os.SEEK_CUR)
 
     def addsheet(self, biff8):
-        self.sheets.append( SheetLoader( self.target.addsheet(biff8.record.name), self.rawstream, biff8.record.startpos ))
+        self.sheets.append( SheetLoader( self, self.target.addsheet(biff8.record.name), biff8.record.startpos ))
 
 class Biff8Record:
     def __init__(self, rectype, size, reader):

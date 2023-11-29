@@ -129,6 +129,12 @@ class SubStream:
             ret = 0
         return ret
 
+    def __len__(self):
+        size = len(self.source) - self.offset
+        if size < 0:
+            size = 0
+        return size
+
     def reset(self):
         self.source.seek(self.offset)
 

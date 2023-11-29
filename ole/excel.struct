@@ -68,7 +68,7 @@ records:
                type: serialstream
                params:
                  - name: source
-                   reference: wbrawstream
+                   reference: rawstream
                record: biff8
              - parse: bookstream
                machine:
@@ -76,8 +76,10 @@ records:
                    default:
                        action: next
                    actions:
+                     - "on": "[0].rectype == 0x0FD"
+                       do: addsstcell
                      - "on": "[0].rectype == 0x027E"
-                       do: addcell
+                       do: addrkcell
                      - "on": "[0].rectype == 0x0A"
                        action: stop
 
