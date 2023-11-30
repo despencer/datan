@@ -202,6 +202,16 @@ class RecordStream:
                 return acc[0]
         return None
 
+    def selectrange(self, stop, start=0):
+        self.seek(start)
+        while self.pos < stop:
+            if self.source.getpos() >= len(self.source):
+                break
+            item = self.record.read(self.source)
+            self.pos += 1
+            yield self.pos-1, item
+
+
 class StructuredStreamReader(StreamReader):
     def loadmeta(self, module, yfield):
         self.record = module.getreader(yfield['record'], records.LoaderXRef(self, 'record'))

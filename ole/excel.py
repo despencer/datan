@@ -52,17 +52,35 @@ class SheetLoader:
         return row.cells[biff8.record.column]
 
     def addrkcell(self, biff8):
-        if (biff8.record.rknum & 0x02) == 0x02:
-            value = int(biff8.record.rknum >> 2)
-        else:
-            value = bytes([0,0,0,0])+(biff8.record.rknum & 0xFFFFFFF7).to_bytes(4, 'little')
-            [value] = struct.unpack('d', value)
-        if (biff8.record.rknum & 0x01) == 0x01:
-            value = value / 100
-        self.addcell(biff8).value = value
+        self.addcell(biff8).value = self.readrknum(biff8.record.rknum)
+
+    def addmulrkcell(self, biff8):
+        lastcol = int.from_bytes( bytes(biff8.record.rawvalue[-2:]) , 'little')
+        ipos = 2
+        if (lastcol-biff8.record.column+1)*6 != len(biff8.record.rawvalue)-2:
+            raise Exception(f'Bad mulrk record')
+        while biff8.record.column <= lastcol:
+            self.addcell(biff8).value = self.readrknum( int.from_bytes( bytes(biff8.record.rawvalue[ipos:ipos+4]) , 'little') )
+            biff8.record.column += 1
+            ipos += 6
+
+    def addformulacell(self, biff8):
+        return
+        if biff8.record.value[6] == 0xFF and biff8.record.value[7] == 0xFF:
+            [value] = struct.unpack('d', bytes(biff8.record.value))
 
     def addsstcell(self, biff8):
         self.addcell(biff8).value = self.wbloader.stringtable[biff8.record.isst]
+
+    def readrknum(self, rknum):
+        if (rknum & 0x02) == 0x02:
+            value = int(rknum >> 2)
+        else:
+            value = bytes([0,0,0,0])+(rknum & 0xFFFFFFF7).to_bytes(4, 'little')
+            [value] = struct.unpack('d', value)
+        if (rknum & 0x01) == 0x01:
+            value = value / 100
+        return value
 
 class WorkbookLoader:
     def __init__(self, rawstream):
@@ -132,6 +150,7 @@ class Biff8Record:
         self.rectype = rectype
         self.size = size
         self.reader = reader
+        self.raw = []
 
     def __repr__(self):
         if self.record == None:
@@ -149,7 +168,7 @@ class Biff8RecordReader:
     def read(self, datafile):
         header = datafile.read(4)
         if len(header) < 4:
-            return None
+            return Biff8Record(0, 0, self)
         record = Biff8Record(int.from_bytes(header[0:2], 'little'), int.from_bytes(header[2:4], 'little'), self)
         record.raw = datafile.read(record.size)
         return record

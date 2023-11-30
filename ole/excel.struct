@@ -76,12 +76,28 @@ records:
                    default:
                        action: next
                    actions:
+                     - "on": "[0].rectype == 0x06"
+                       do: addformulacell
+                     - "on": "[0].rectype == 0x0BD"
+                       do: addmulrkcell
                      - "on": "[0].rectype == 0x0FD"
                        do: addsstcell
                      - "on": "[0].rectype == 0x027E"
                        do: addrkcell
                      - "on": "[0].rectype == 0x0A"
                        action: stop
+
+# 0x06:
+    formula:
+        - field: row
+          type: uint16
+        - field: column
+          type: uint16
+        - field: ixfe
+          type: uint16
+        - field: value
+          type: uint8[8]
+
 
 # 0x0E:
     calcprecision:
@@ -179,6 +195,15 @@ records:
         - field: count
           type: uint16
 
+# 0x0BD
+    mulrk:
+        - field: row
+          type: uint16
+        - field: column
+          type: uint16
+        - field: rawvalue
+          type: filler
+
 # 0x0C1
     mms:
         - field: reserved
@@ -258,6 +283,7 @@ records:
 
 mappings:
     biff8:
+        0x0006: formula
         0x000E: calcprecision
         0x0012: protect
         0x0013: password
@@ -270,6 +296,7 @@ mappings:
         0x005C: writeaccess
         0x0085: boundsheet8
         0x009C: builtinfngroupcount
+        0x00BD: mulrk
         0x00C1: mms
         0x00E1: interfacehdr
         0x00E2: interfaceend

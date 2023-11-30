@@ -17,6 +17,7 @@ options:
             0x0015: footer
             0x0017: externsheet
             0x0019: winprotect
+            0x001D: selection
             0x0022: date1904
             0x0026: leftmargin
             0x0027: rightmargin
@@ -53,6 +54,7 @@ options:
             0x00E1: interfacehdr
             0x00E2: interfaceend
             0x00EB: msodrawinggroup
+            0x00EF: phoneticinfo
             0x00FC: sst
             0x00FD: labelsst
             0x00FF: extsst
@@ -68,9 +70,11 @@ options:
             0x01C1: recalcid
             0x0200: dimensions
             0x0201: blank
+            0x0207: string
             0x0208: row
             0x020B: index
             0x0225: defaultrowheight
+            0x023E: window2
             0x027E: rk
             0x0293: style
             0x041E: format
