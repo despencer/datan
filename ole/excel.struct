@@ -82,6 +82,8 @@ records:
                        do: addmulrkcell
                      - "on": "[0].rectype == 0x0FD"
                        do: addsstcell
+                     - "on": "[0].rectype == 0x0207"
+                       do: addformulastring
                      - "on": "[0].rectype == 0x027E"
                        do: addrkcell
                      - "on": "[0].rectype == 0x0A"
@@ -261,6 +263,14 @@ records:
 # 0x1C0
     excel9file: []
 
+# 0x0207
+    formulastring:
+        - field: rawvalue
+          type: filler
+        - field: value
+          function: "ole_longmsunicode(rawvalue.readall())"
+
+
 # 0x027E:
     rk:
         - field: row
@@ -306,6 +316,7 @@ mappings:
         0x0161: dsf
         0x01AF: prot4rev
         0x01C0: excel9file
+        0x0207: formulastring
         0x027E: rk
         0x0809: bof
 

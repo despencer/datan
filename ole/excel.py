@@ -65,9 +65,20 @@ class SheetLoader:
             ipos += 6
 
     def addformulacell(self, biff8):
-        return
+        cell = self.addcell(biff8)
         if biff8.record.value[6] == 0xFF and biff8.record.value[7] == 0xFF:
+            if biff8.record.value[0] == 0 or biff8.record.value[0] == 2:
+                value = None
+                self.lastformula = cell
+            else:
+                raise Exception(f'Unknown formula value type {biff8.record.value[0]} at row {biff8.record.row} column {biff8.record.column}')
+        else:
             [value] = struct.unpack('d', bytes(biff8.record.value))
+        cell.value = value
+
+    def addformulastring(self, biff8):
+        self.lastformula.value = biff8.record.value
+        self.lastformula = None
 
     def addsstcell(self, biff8):
         self.addcell(biff8).value = self.wbloader.stringtable[biff8.record.isst]
