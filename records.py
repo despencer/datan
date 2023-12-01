@@ -2,6 +2,7 @@ import yaml
 import os
 import sys
 import importlib
+import formatter
 import streams
 import transform
 import parser
@@ -95,10 +96,18 @@ class PlainRecordReader:
         else:
             field.reader = module.getreader(yfield['type'], LoaderXRef(field, 'reader', meta=yfield))
             field.formatter = module.loader.formatter.get(yfield['type'])
-            if 'params' in yfield:
-                cls.loadparam(module.loader, field, yfield['params'])
-            if hasattr(field.reader, 'loadmeta'):
-                field.reader.loadmeta(module, yfield)
+            if 'count' in yfield:
+                reader = ArrayReader(0)
+                field.preread.append( lambda context: reader.evalcount(yfield['count'], context) )
+                reader.simple = field.reader
+                basefmt = field.formatter
+                field.formatter = lambda x: formatter.arrayformatter(x, basefmt)
+                field.reader = reader
+            else:
+                if 'params' in yfield:
+                    cls.loadparam(module.loader, field, yfield['params'])
+                if hasattr(field.reader, 'loadmeta'):
+                    field.reader.loadmeta(module, yfield)
         return field
 
     @classmethod
@@ -149,6 +158,9 @@ class ArrayReader:
         for i in range(self.count):
             ret.append( self.simple.read(stream) )
         return ret
+
+    def evalcount(self, ecount, context):
+        self.count = eval(ecount, vars(context))
 
 class Structure:
     def __init__(self):
@@ -354,8 +366,8 @@ class LoaderModule:
         return self.loader.structure.functions
 
 class Loader:
-    def __init__(self, formatter):
-        self.formatter = formatter
+    def __init__(self, fmt):
+        self.formatter = fmt
         self.xrefs = []
         self.simple = { 'uint8': IntReader(1), 'uint16': IntReader(2),
             'uint32': IntReader(4), 'uint64': IntReader(8) }
@@ -424,6 +436,6 @@ def loadpyfile(structure, filename):
 def loadfieldreader(yfield, module):
     return PlainRecordReader.loadfield(yfield, module)
 
-def loadmeta(filename, formatter):
-    loader = Loader(formatter)
+def loadmeta(filename, fmt):
+    loader = Loader(fmt)
     return loader.load(filename)

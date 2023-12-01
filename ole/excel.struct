@@ -89,6 +89,7 @@ records:
                      - "on": "[0].rectype == 0x0A"
                        action: stop
 
+# BIFF8 records
 # 0x06:
     formula:
         - field: row
@@ -99,7 +100,15 @@ records:
           type: uint16
         - field: value
           type: uint8[8]
-
+        - field: status
+          type: uint16
+        - field: cache
+          type: uint32
+        - field: formulasize
+          type: uint16
+        - field: rawformula
+          type: uint8
+          count: formulasize
 
 # 0x0E:
     calcprecision:
@@ -291,6 +300,16 @@ records:
         - field: padder
           type: free[12]
 
+## Ptg (Compiled formulas records)
+# 0x04
+    ptgref:
+        - field: type
+          type: uint8
+        - field: row
+          type: uint16
+        - field: rcolumn
+          type: uint16
+
 mappings:
     biff8:
         0x0006: formula
@@ -319,4 +338,5 @@ mappings:
         0x0207: formulastring
         0x027E: rk
         0x0809: bof
-
+    ptg:
+        0x04:  ptgref

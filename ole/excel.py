@@ -75,6 +75,10 @@ class SheetLoader:
         else:
             [value] = struct.unpack('d', bytes(biff8.record.value))
         cell.value = value
+        if (biff8.record.status & 0x08) == 0x08:
+            raise Exception("Can't yet parse shared formulas")
+#        ptgs = biff8.record.formula[2:2+int.from_bytes(biff8.record.formula[0:2], 'little')]
+#        print(biff8.record.row, biff8.record.column, list(map(lambda x: f'{x:02X}', ptgs)))
 
     def addformulastring(self, biff8):
         self.lastformula.value = biff8.record.value
