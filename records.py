@@ -6,6 +6,7 @@ import formatter
 import streams
 import transform
 import parser
+import selector
 
 class FieldReader:
     def __init__(self):
@@ -38,13 +39,17 @@ class PlainRecordReader:
     def __init__(self):
         self.fields = []
         self.transforms = []
+        self.selector = None
 
     def read(self, datafile):
+        pos = datafile.getpos()
         data = PlainRecord(self)
         for f in self.fields:
             f.read(datafile, data)
         for t in self.transforms:
             t.transform(self.getfields(data))
+        if self.selector != None:
+            data = self.selector.select(datafile, pos, data)
         return data
 
     def prettyprint(self, data):
@@ -83,6 +88,8 @@ class PlainRecordReader:
                 prec.transforms.append( transform.loadtransformer(yfield, module) )
             elif 'parse' in yfield:
                 prec.transforms.append( parser.loadparser(yfield, module) )
+            elif 'selection' in yfield:
+                prec.selector = selector.loadselector(yfield['selection'], module)
         return prec
 
     @classmethod
@@ -172,6 +179,8 @@ class Structure:
         self.target = None
 
     def read(self, datafile):
+        if not hasattr(datafile, 'getpos'):
+            setattr(datafile, 'getpos', lambda: datafile.tell())
         root = self.start.read(datafile)
         rf = root.getfields()
         for rx in self.xrefs:
@@ -351,13 +360,16 @@ class LoaderModule:
         array.simple = self.getreader(simple, LoaderXRef(array, 'simple'))
         return array
 
-    def gettypemapper(self, name):
+    def loadtypemapper(self, ymeta):
         mapper = TypeMapper()
-        for ykey, yreader in self.ymeta['mappings'][name].items():
+        for ykey, yreader in ymeta.items():
             item = TypeMapperItem()
             item.reader = self.getreader(yreader, LoaderXRef(item, 'reader'))
             mapper.add(ykey, item)
         return mapper
+
+    def gettypemapper(self, name):
+        return self.loadtypemapper(self.ymeta['mappings'][name])
 
     def getformatter(self, name):
         return self.loader.formatter.get(name)

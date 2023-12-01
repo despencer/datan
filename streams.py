@@ -335,7 +335,7 @@ class SerialStream:
 
     def syncroll(self):
         ''' Pre-condition - the position is not the end one and synchronized '''
-        self.record.readsize(self.source)
+        self.record.read(self.source)
         self.pos += 1
         if self.pos % self.step == 0:
             if (self.pos // self.step) >= len(self.index):
@@ -347,6 +347,16 @@ class SerialStream:
         self.seek(key)
         ret = self.read(1)
         return ret[0] if len(ret) > 0 else None
+
+    def readall(self):
+        self.seek(0)
+        all = []
+        while True:
+            r = self.read(1)
+            if len(r) == 0:
+                break
+            all.append(r)
+        return all
 
 class SerialStreamReader(StructuredStreamReader):
     def read(self, datafile):

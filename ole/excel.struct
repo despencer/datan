@@ -109,6 +109,17 @@ records:
         - field: rawformula
           type: uint8
           count: formulasize
+        - field: rawformulastream
+          type: bytestream
+          params:
+            - name: source
+              reference: rawformula
+        - field: formulastream
+          type: serialstream
+          params:
+            - name: source
+              reference: rawformulastream
+          record: ptg
 
 # 0x0E:
     calcprecision:
@@ -301,7 +312,84 @@ records:
           type: free[12]
 
 ## Ptg (Compiled formulas records)
-# 0x04
+    ptg:
+        - field: type
+          type: uint8
+        - selection:
+             selector: "type&0x7F"
+             mapping:
+                 0x02: ptgtbl
+                 0x03: ptgadd
+                 0x05: ptgmul
+                 0x17: ptgstr
+                 0x19: ptgext2
+                 0x1E: ptgint
+                 0x22: ptgfuncvar
+                 0x24: ptgref
+                 0x25: ptgarea
+                 0x42: ptgfuncvar
+                 0x44: ptgref
+                 0x45: ptgarea
+
+# 0x02
+    ptgtbl:
+        - field: type
+          type: uint8
+        - field: trow
+          type: uint16
+        - field: tcol
+          type: uint8
+
+# 0x03
+    ptgadd:
+        - field: type
+          type: uint8
+
+# 0x05
+    ptgmul:
+        - field: type
+          type: uint8
+
+# 0x017
+    ptgstr:
+        - field: type
+          type: uint8
+        - field: value
+          type: shortmsunicode
+
+# 0x019
+    ptgext2:
+        - field: type
+          type: uint16
+        - selection:
+             selector: "type"
+             mapping:
+                 0x1019: ptgattrsum
+
+# 0x019-0x10
+    ptgattrsum:
+        - field: type
+          type: uint16
+        - field: unused
+          type: uint16
+
+# 0x01E
+    ptgint:
+        - field: type
+          type: uint8
+        - field: value
+          type: uint16
+
+# 0x22, 0x42
+    ptgfuncvar:
+        - field: type
+          type: uint8
+        - field: cparams
+          type: uint8
+        - field: ctab
+          type: uint16
+
+# 0x24, 0x44
     ptgref:
         - field: type
           type: uint8
@@ -309,6 +397,20 @@ records:
           type: uint16
         - field: rcolumn
           type: uint16
+
+# 0x25, 0x45
+    ptgarea:
+        - field: type
+          type: uint8
+        - field: rowfirst
+          type: uint16
+        - field: rowlast
+          type: uint16
+        - field: columnfirst
+          type: uint16
+        - field: columnlast
+          type: uint16
+
 
 mappings:
     biff8:

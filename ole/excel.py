@@ -19,6 +19,7 @@ class Workbook:
 class Cell:
     def __init__(self, value):
         self.value = value
+        self.formula = None
 
 class Row:
     def __init__(self):
@@ -77,8 +78,7 @@ class SheetLoader:
         cell.value = value
         if (biff8.record.status & 0x08) == 0x08:
             raise Exception("Can't yet parse shared formulas")
-#        ptgs = biff8.record.formula[2:2+int.from_bytes(biff8.record.formula[0:2], 'little')]
-#        print(biff8.record.row, biff8.record.column, list(map(lambda x: f'{x:02X}', ptgs)))
+        cell.formula = biff8.record.formulastream.readall()
 
     def addformulastring(self, biff8):
         self.lastformula.value = biff8.record.value
@@ -219,6 +219,28 @@ class Biff8StreamFormatter(formatter.StreamFormatter):
             ret += '\n'
         return ret
 
+class Biff8String:
+    def __init__(self, type):
+        self.type = type
+
+    def read(self, datafile):
+        if self.type == 'short':
+            return self.readshort(datafile)
+        return ''
+
+    def readshort(self, datafile):
+        [count] = datafile.read(1)
+        [method] = datafile.read(1)
+        if (method & 0x1) == 0x1:
+            return bytes(datafile.read(2*count)).decode('utf-16')
+        else:
+            return bytes(datafile.read(count)).decode('ascii')
+
+    @classmethod
+    def getshortreader(cls, module):
+        reader = cls('short')
+        return reader
+
 def bookloader(rawstream):
     return WorkbookLoader(rawstream)
 
@@ -235,7 +257,7 @@ def shortmsunicode(rawdata):
     return rawdata[2:2+size].decode(method)
 
 def loadmeta(module):
-    module.addtypes( { 'biff8': Biff8RecordReader.getreader } )
+    module.addtypes( { 'biff8': Biff8RecordReader.getreader, 'shortmsunicode': Biff8String.getshortreader } )
     module.addfunctions( {'longmsunicode': longmsunicode, 'shortmsunicode': shortmsunicode, 'bookloader': bookloader } )
 
 def loadformatters(fmt, yoptions):
