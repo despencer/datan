@@ -318,18 +318,49 @@ records:
         - selection:
              selector: "type&0x7F"
              mapping:
+                 0x01: ptgexp
                  0x02: ptgtbl
                  0x03: ptgadd
+                 0x04: ptgsub
                  0x05: ptgmul
+                 0x06: ptgdiv
+                 0x0B: ptgeq
+                 0x0C: ptgge
+                 0x0D: ptggt
+                 0x11: ptgrange
+                 0x12: ptguplus
+                 0x13: ptguminus
+                 0x15: ptgparen
+                 0x16: ptgmissarg
                  0x17: ptgstr
                  0x19: ptgext2
                  0x1E: ptgint
+                 0x1F: ptgnum
+                 0x21: ptgfunc
                  0x22: ptgfuncvar
                  0x24: ptgref
                  0x25: ptgarea
+                 0x26: ptgmemarea
+                 0x29: ptgmemfunc
+                 0x3A: ptgref3d
+                 0x3B: ptgarea3d
+                 0x41: ptgfunc
                  0x42: ptgfuncvar
                  0x44: ptgref
                  0x45: ptgarea
+                 0x46: ptgmemarea
+                 0x49: ptgmemfunc
+                 0x5A: ptgref3d
+                 0x5B: ptgarea3d
+
+# 0x01
+    ptgexp:
+        - field: type
+          type: uint8
+        - field: row
+          type: uint16
+        - field: col
+          type: uint16
 
 # 0x02
     ptgtbl:
@@ -345,8 +376,58 @@ records:
         - field: type
           type: uint8
 
+# 0x04
+    ptgsub:
+        - field: type
+          type: uint8
+
 # 0x05
     ptgmul:
+        - field: type
+          type: uint8
+
+# 0x06
+    ptgdiv:
+        - field: type
+          type: uint8
+
+# 0x0B
+    ptgeq:
+        - field: type
+          type: uint8
+
+# 0x0C
+    ptgge:
+        - field: type
+          type: uint8
+
+# 0x0D
+    ptggt:
+        - field: type
+          type: uint8
+
+# 0x11
+    ptgrange:
+        - field: type
+          type: uint8
+
+# 0x12
+    ptguplus:
+        - field: type
+          type: uint8
+
+# 0x13
+    ptguminus:
+        - field: type
+          type: uint8
+
+# 0x15
+    ptgparen:
+        - field: type
+          type: uint8
+
+# 0x16
+    ptgmissarg:
         - field: type
           type: uint8
 
@@ -364,7 +445,24 @@ records:
         - selection:
              selector: "type"
              mapping:
+                 0x0219: ptgattrif
+                 0x0819: ptgattrgoto
                  0x1019: ptgattrsum
+                 0x4019: ptgattrspace
+
+# 0x019-0x02
+    ptgattrif:
+        - field: type
+          type: uint16
+        - field: offset
+          type: uint16
+
+# 0x019-0x08
+    ptgattrgoto:
+        - field: type
+          type: uint16
+        - field: offset
+          type: uint16
 
 # 0x019-0x10
     ptgattrsum:
@@ -373,11 +471,34 @@ records:
         - field: unused
           type: uint16
 
+# 0x019-0x40
+    ptgattrspace:
+        - field: type
+          type: uint16
+        - field: space
+          type: uint16
+
 # 0x01E
     ptgint:
         - field: type
           type: uint8
         - field: value
+          type: uint16
+
+# 0x01F
+    ptgnum:
+        - field: type
+          type: uint8
+        - field: rawvalue
+          type: uint8[8]
+        - field: value
+          function: "ole_getdouble(rawvalue)"
+
+# 0x21, 0x41
+    ptgfunc:
+        - field: type
+          type: uint8
+        - field: iftab
           type: uint16
 
 # 0x22, 0x42
@@ -402,6 +523,47 @@ records:
     ptgarea:
         - field: type
           type: uint8
+        - field: rowfirst
+          type: uint16
+        - field: rowlast
+          type: uint16
+        - field: columnfirst
+          type: uint16
+        - field: columnlast
+          type: uint16
+
+# 0x26, 0x46
+    ptgmemarea:
+        - field: type
+          type: uint8
+        - field: unused
+          type: uint32
+        - field: cce
+          type: uint16
+
+# 0x29, 0x49
+    ptgmemfunc:
+        - field: type
+          type: uint8
+        - field: cce
+          type: uint16
+
+
+# 0x3A, 0x5A
+    ptgref3d:
+        - field: type
+          type: uint8
+        - field: ixti
+          type: uint16
+        - field: loc
+          type: uint32
+
+# 0x3B, 0x5B
+    ptgarea3d:
+        - field: type
+          type: uint8
+        - field: ixti
+          type: uint16
         - field: rowfirst
           type: uint16
         - field: rowlast
@@ -440,5 +602,3 @@ mappings:
         0x0207: formulastring
         0x027E: rk
         0x0809: bof
-    ptg:
-        0x04:  ptgref

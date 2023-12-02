@@ -74,10 +74,11 @@ class SheetLoader:
             else:
                 raise Exception(f'Unknown formula value type {biff8.record.value[0]} at row {biff8.record.row} column {biff8.record.column}')
         else:
-            [value] = struct.unpack('d', bytes(biff8.record.value))
+            value = getdouble(biff8.record.value)
         cell.value = value
-        if (biff8.record.status & 0x08) == 0x08:
-            raise Exception("Can't yet parse shared formulas")
+#        print(biff8.record.rawformulastream)
+#        if (biff8.record.status & 0x08) == 0x08:
+#            raise Exception("Can't yet parse shared formulas")
         cell.formula = biff8.record.formulastream.readall()
 
     def addformulastring(self, biff8):
@@ -244,6 +245,10 @@ class Biff8String:
 def bookloader(rawstream):
     return WorkbookLoader(rawstream)
 
+def getdouble(rawvalue):
+    [value] = struct.unpack('d', bytes(rawvalue))
+    return value
+
 def longmsunicode(rawdata):
     method = 'ascii' if (rawdata[2] & 0x80) == 0 else 'utf-16'
     size = int.from_bytes(rawdata[0:2], 'little')
@@ -258,7 +263,8 @@ def shortmsunicode(rawdata):
 
 def loadmeta(module):
     module.addtypes( { 'biff8': Biff8RecordReader.getreader, 'shortmsunicode': Biff8String.getshortreader } )
-    module.addfunctions( {'longmsunicode': longmsunicode, 'shortmsunicode': shortmsunicode, 'bookloader': bookloader } )
+    module.addfunctions( {'longmsunicode': longmsunicode, 'shortmsunicode': shortmsunicode, 'bookloader': bookloader,
+                           'getdouble': getdouble } )
 
 def loadformatters(fmt, yoptions):
     fmt.addformatters( {'wbstream': Biff8StreamFormatter(yoptions) } )

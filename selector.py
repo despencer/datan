@@ -7,7 +7,7 @@ class Selector:
     def select(self, datafile, pos, context):
         key = eval(self.selector, vars(context))
         if key not in self.mapping:
-            raise Exception(f'Selector {key:X} not found in the mapping at {pos}')
+            raise Exception(f'Selector 0x{key:X} not found in the mapping at 0x{pos:X}')
         datafile.seek(pos)
         return self.mapping[key].read(datafile)
 
